@@ -275,6 +275,24 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
   .ldbig{font-size:66px;}
   .qsym{font-size:74px;}
 }
+/* FLASHCARDS */
+.fc-card{perspective:1000px;height:260px;cursor:pointer;margin-bottom:4px;}
+.fc-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s ease;}
+.fc-inner.flipped{transform:rotateY(180deg);}
+.fc-front,.fc-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;}
+.fc-front{background:var(--panel2);border:2px solid var(--bd2);}
+.fc-back{background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.05));border:2px solid var(--gold);transform:rotateY(180deg);}
+.fc-hint{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--mu);margin-bottom:16px;}
+.fc-ar{font-family:'Scheherazade New',serif;font-size:80px;color:var(--gold);direction:rtl;text-shadow:0 0 30px rgba(201,168,76,.3);line-height:1.2;}
+.fc-tap{font-size:12px;color:rgba(201,168,76,.35);margin-top:16px;letter-spacing:1px;}
+.fc-answer{font-family:'Scheherazade New',serif;font-size:32px;color:var(--gold);direction:rtl;margin-bottom:8px;}
+.fc-sub{font-size:16px;font-weight:600;color:var(--tx);margin-bottom:4px;}
+.fc-sub2{font-size:13px;color:var(--mu);}
+/* CALENDAR */
+.cal-day{width:14px;height:14px;border-radius:3px;background:var(--panel2);}
+.cal-day.l1{background:rgba(201,168,76,.25);}
+.cal-day.l2{background:rgba(201,168,76,.5);}
+.cal-day.l3{background:rgba(201,168,76,.85);}
 </style>
 </head>
 <body data-theme="dark">
@@ -304,7 +322,7 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
         <button class="nb-drop-item" onclick="showSec('alpha');closeGroups()">🔤 Alphabet</button>
         <button class="nb-drop-item" onclick="showSec('harakat');closeGroups()">✨ Voyelles</button>
         <button class="nb-drop-item" onclick="showSec('tajweed');closeGroups()">📖 Tajweed</button>
-        <button class="nb-drop-item" onclick="showSec('asma');closeGroups()">☪ 99 Noms</button>
+        <button class="nb-drop-item" onclick="showSec('asma');closeGroups()">⭐ 99 Noms</button>
         <button class="nb-drop-item" onclick="showSec('dict');closeGroups()">📖 Dictionnaire</button>
       </div>
     </div>
@@ -322,7 +340,16 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
       <div class="nb-dropdown" id="grp-train">
         <button class="nb-drop-item" onclick="showSec('quiz');closeGroups()">🎯 Quiz</button>
         <button class="nb-drop-item" onclick="showSec('exam');closeGroups()">⏱ Examen</button>
+        <button class="nb-drop-item" onclick="showSec('flash');closeGroups()">🃏 Flashcards</button>
         <button class="nb-drop-item" onclick="showSec('dessin');closeGroups()">✏️ Calligraphie</button>
+      </div>
+    </div>
+    <!-- SPIRITUEL -->
+    <div class="nav-group">
+      <button class="nb-group" onclick="toggleGroup('grp-spirit')">🤲 Spirituel ▾</button>
+      <div class="nb-dropdown" id="grp-spirit">
+        <button class="nb-drop-item" onclick="showSec('duas');closeGroups()">🤲 Duas</button>
+        <button class="nb-drop-item" onclick="showSec('badges');closeGroups()">🏆 Badges</button>
       </div>
     </div>
     <!-- PROGRESSION (direct) -->
@@ -600,6 +627,77 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
   </div>
 </div>
 
+<!-- FLASHCARDS -->
+<div class="sec" id="sec-flash">
+  <div class="stitle">🃏 Flashcards</div>
+  <div class="ssub">Retourne la carte pour voir la réponse · +2 XP si correct</div>
+  <div class="qmodes" style="margin-bottom:16px;">
+    <button class="qmode active" onclick="setFlashMode('alpha',this)">Lettres</button>
+    <button class="qmode" onclick="setFlashMode('asma',this)">99 Noms</button>
+    <button class="qmode" onclick="setFlashMode('dict',this)">Dictionnaire</button>
+  </div>
+  <div style="max-width:420px;margin:0 auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:13px;color:var(--mu);">Carte <span id="fc-idx">1</span> / <span id="fc-total">29</span></div>
+      <div style="display:flex;gap:8px;">
+        <span style="font-size:13px;color:var(--green);">✓ <span id="fc-ok">0</span></span>
+        <span style="font-size:13px;color:var(--red);">✗ <span id="fc-ko">0</span></span>
+      </div>
+    </div>
+    <div class="fc-card" id="fc-card" onclick="flipCard()">
+      <div class="fc-inner" id="fc-inner">
+        <div class="fc-front">
+          <div class="fc-hint" id="fc-hint">Quel est le nom ?</div>
+          <div class="fc-ar" id="fc-ar"></div>
+          <div class="fc-tap">Appuie pour retourner</div>
+        </div>
+        <div class="fc-back">
+          <div class="fc-answer" id="fc-answer"></div>
+          <div class="fc-sub" id="fc-sub"></div>
+          <div class="fc-sub2" id="fc-sub2"></div>
+        </div>
+      </div>
+    </div>
+    <div id="fc-btns" style="display:none;margin-top:16px;">
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="btn-gh" style="flex:1;max-width:160px;" onclick="ansFlash(false)">✗ Difficile</button>
+        <button class="btn-g" style="flex:1;max-width:160px;" onclick="ansFlash(true)">✓ Su !</button>
+      </div>
+    </div>
+    <div id="fc-done" style="display:none;text-align:center;padding:32px 0;">
+      <div style="font-family:'Scheherazade New',serif;font-size:36px;color:var(--gold);margin-bottom:12px;">أَحْسَنْتَ !</div>
+      <div style="color:var(--mu);font-size:15px;margin-bottom:20px;">Séance terminée — <span id="fc-result"></span></div>
+      <button class="btn-g" onclick="initFlash()">🔄 Recommencer</button>
+    </div>
+  </div>
+</div>
+
+<!-- DUAS -->
+<div class="sec" id="sec-duas">
+  <div class="stitle">أَدْعِيَة</div>
+  <div class="ssub">Invocations par moment de la journée · Appuie pour écouter</div>
+  <div id="duas-tabs"></div>
+  <div id="duas-grid"></div>
+</div>
+
+<!-- BADGES -->
+<div class="sec" id="sec-badges">
+  <div class="stitle">🏆 Badges & Trophées</div>
+  <div class="ssub">Débloque des récompenses en progressant</div>
+  <div id="badges-calendar" style="margin-bottom:28px;">
+    <div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:12px;">📅 Calendrier d'activité — 12 dernières semaines</div>
+    <div id="cal-grid" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
+    <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--mu);">
+      <span>⬜ Aucune activité</span>
+      <span style="color:rgba(201,168,76,.4);">▪ Faible</span>
+      <span style="color:rgba(201,168,76,.7);">▪ Moyen</span>
+      <span style="color:var(--gold);">▪ Actif</span>
+    </div>
+  </div>
+  <div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:12px;">🏅 Mes badges</div>
+  <div class="dict-grid" id="badges-grid"></div>
+</div>
+
 </div><!-- /wrap -->
 
 <script>
@@ -798,6 +896,8 @@ if(!ST.srNext)ST.srNext={};
 if(!ST.favs)ST.favs={};
 if(!ST.surahStatus)ST.surahStatus={};
 if(!ST.playlist)ST.playlist=[];
+if(!ST.flashOk)ST.flashOk=0;
+if(!ST.activity)ST.activity={};
 
 function save(){localStorage.setItem('nourST',JSON.stringify(ST));}
 
@@ -818,6 +918,7 @@ const LEVELS=[
 ];
 function addXP(n){
   ST.xp=(ST.xp||0)+n; save(); updateXPBar();
+  trackActivity();
   const t=document.createElement('div');
   t.style.cssText='position:fixed;bottom:22px;right:14px;background:linear-gradient(135deg,#8B6914,#C9A84C);color:#1A1000;padding:9px 16px;border-radius:30px;font-weight:700;font-size:13px;z-index:9999;pointer-events:none;animation:fu .3s ease;';
   t.textContent='+'+n+' XP';
@@ -984,15 +1085,15 @@ function showSec(id){
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.nb-drop-item').forEach(b=>b.classList.remove('cur'));
   document.getElementById('sec-'+id).classList.add('active');
-  // Mark active in dropdowns
   document.querySelectorAll('.nb-drop-item').forEach(b=>{
     if(b.getAttribute('onclick')?.includes("'"+id+"'")) b.classList.add('cur');
   });
   document.querySelectorAll('.nb').forEach(b=>{
     if(b.getAttribute('onclick')?.includes("'"+id+"'")) b.classList.add('active');
   });
-  if(id==='prog')renderProg();
-  if(id==='playlist')renderPlaylist();
+  if(id==='prog') renderProg();
+  if(id==='playlist') renderPlaylist();
+  if(id==='badges') renderBadges();
 }
 
 function toggleGroup(id){
@@ -1754,7 +1855,299 @@ function renderProg(){
 function resetProg(){ST={mastered:{},review:{},xp:0,qPlayed:0,streak:0,lastDay:'',srDue:{},srNext:{},favs:{},surahStatus:{},playlist:[]};save();updateXPBar();renderAlpha();renderProg();}
 
 // ═══════════════════════════════════════════
-// INIT
+// FLASHCARDS
+// ═══════════════════════════════════════════
+
+let flashMode='alpha', flashDeck=[], flashIdx=0, flashOk=0, flashKo=0, flashFlipped=false;
+
+function setFlashMode(m,btn){
+  flashMode=m;
+  document.querySelectorAll('.qmode').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  initFlash();
+}
+
+function buildDeck(){
+  if(flashMode==='alpha') return LETTERS.map(l=>({front:l.ar,answer:l.name,sub:l.ph,sub2:l.desc,hint:'Quel est le nom de cette lettre ?'}));
+  if(flashMode==='asma') return ASMA.map(a=>({front:a.ar,answer:a.fr,sub:a.tr,sub2:a.desc,hint:'Quel est ce nom d\'Allah ?'}));
+  if(flashMode==='dict') return DICT.map(d=>({front:d.ar,answer:d.fr,sub:d.tr,sub2:d.tag,hint:'Que signifie ce mot ?'}));
+  return [];
+}
+
+function initFlash(){
+  flashDeck=[...buildDeck()].sort(()=>Math.random()-.5);
+  flashIdx=0; flashOk=0; flashKo=0; flashFlipped=false;
+  document.getElementById('fc-done').style.display='none';
+  document.getElementById('fc-btns').style.display='none';
+  document.getElementById('fc-card').style.display='block';
+  loadFlashCard();
+}
+
+function loadFlashCard(){
+  if(flashIdx>=flashDeck.length){
+    document.getElementById('fc-card').style.display='none';
+    document.getElementById('fc-btns').style.display='none';
+    document.getElementById('fc-done').style.display='block';
+    const pct=Math.round(flashOk/flashDeck.length*100);
+    document.getElementById('fc-result').textContent=`${flashOk}/${flashDeck.length} cartes sues (${pct}%)`;
+    addXP(flashOk*2);
+    return;
+  }
+  const c=flashDeck[flashIdx];
+  flashFlipped=false;
+  document.getElementById('fc-inner').classList.remove('flipped');
+  document.getElementById('fc-hint').textContent=c.hint;
+  document.getElementById('fc-ar').textContent=c.front;
+  document.getElementById('fc-answer').textContent=c.answer;
+  document.getElementById('fc-sub').textContent=c.sub||'';
+  document.getElementById('fc-sub2').textContent=c.sub2||'';
+  document.getElementById('fc-idx').textContent=flashIdx+1;
+  document.getElementById('fc-total').textContent=flashDeck.length;
+  document.getElementById('fc-ok').textContent=flashOk;
+  document.getElementById('fc-ko').textContent=flashKo;
+  document.getElementById('fc-btns').style.display='none';
+}
+
+function flipCard(){
+  if(flashFlipped) return;
+  flashFlipped=true;
+  document.getElementById('fc-inner').classList.add('flipped');
+  document.getElementById('fc-btns').style.display='block';
+  gtts(flashDeck[flashIdx]?.front||'');
+}
+
+function ansFlash(ok){
+  if(ok){flashOk++;ST.flashOk=(ST.flashOk||0)+1;save();addXP(2);}else{flashKo++;}
+  document.getElementById('fc-ok').textContent=flashOk;
+  document.getElementById('fc-ko').textContent=flashKo;
+  flashIdx++;
+  loadFlashCard();
+}
+
+// ═══════════════════════════════════════════
+// DUAS
+// ═══════════════════════════════════════════
+
+const DUAS_CATS = [
+  {
+    id:'matin',icon:'🌅',label:'Matin (Adhkar Sabah)',
+    duas:[
+      {ar:'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ',tr:'Asbahna wa-asbaha l-mulku lillāhi wa-l-hamdu lillāh',fr:'Nous voici au matin et le royaume appartient à Allah, louange à Allah'},
+      {ar:'اللَّهُمَّ بِكَ أَصْبَحْنَا وَبِكَ أَمْسَيْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُور',tr:'Allāhumma bika asbahnā wa-bika amsaynā wa-bika nahyā wa-bika namūtu wa-ilayka n-nushūr',fr:'Ô Allah, c\'est par Toi que nous entrons au matin, au soir, que nous vivons, mourons, et vers Toi est la résurrection'},
+      {ar:'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيم',tr:'A\'ūdhu billāhi mina sh-shaytāni r-rajīm',fr:'Je cherche refuge auprès d\'Allah contre Satan le maudit'},
+      {ar:'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَة',tr:'Allāhumma innī as\'aluka l-\'afwa wa-l-\'āfiyata fi d-dunyā wa-l-ākhira',fr:'Ô Allah, je Te demande le pardon et la santé dans cette vie et dans l\'au-delà'},
+      {ar:'اللَّهُمَّ عَافِنِي فِي بَدَنِي، اللَّهُمَّ عَافِنِي فِي سَمْعِي، اللَّهُمَّ عَافِنِي فِي بَصَرِي',tr:'Allāhumma \'āfinī fī badanī, Allāhumma \'āfinī fī sam\'ī, Allāhumma \'āfinī fī basarī',fr:'Ô Allah, accorde-moi la santé dans mon corps, dans mon ouïe, dans ma vue'},
+      {ar:'حَسْبِيَ اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ',tr:'Hasbiya llāhu lā ilāha illā huwa \'alayhi tawakkaltu',fr:'Allah me suffit, il n\'y a de dieu que Lui, c\'est sur Lui que je me confie'},
+    ]
+  },
+  {
+    id:'soir',icon:'🌙',label:'Soir (Adhkar Masaa)',
+    duas:[
+      {ar:'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ',tr:'Amsaynā wa-amsa l-mulku lillāhi wa-l-hamdu lillāh',fr:'Nous voici au soir et le royaume appartient à Allah, louange à Allah'},
+      {ar:'اللَّهُمَّ بِكَ أَمْسَيْنَا وَبِكَ أَصْبَحْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ الْمَصِير',tr:'Allāhumma bika amsaynā wa-bika asbahnā wa-bika nahyā wa-bika namūtu wa-ilayka l-masīr',fr:'Ô Allah, c\'est par Toi que nous entrons au soir et au matin, que nous vivons, mourons, et vers Toi est le retour'},
+      {ar:'أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَق',tr:'A\'ūdhu bi-kalimāti llāhi t-tāmmāti min sharri mā khalaq',fr:'Je cherche refuge dans les paroles parfaites d\'Allah contre le mal de ce qu\'Il a créé'},
+      {ar:'بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ',tr:'Bismi llāhi lladhī lā yadurru ma\'a ismihi shay\'un fi l-ardi wa-lā fi s-samā\'',fr:'Au nom d\'Allah avec dont le nom rien ne peut nuire, ni sur terre ni dans le ciel'},
+      {ar:'اللَّهُمَّ إِنِّي أَمْسَيْتُ أُشْهِدُكَ وَأُشْهِدُ حَمَلَةَ عَرْشِكَ وَمَلَائِكَتَكَ أَنَّكَ أَنْتَ اللَّهُ لَا إِلَٰهَ إِلَّا أَنْت',tr:'Allāhumma innī amsaytu ushhiduka wa-ushhidu hamalata \'arshika wa-malā\'ikataka annaka anta llāhu lā ilāha illā ant',fr:'Ô Allah, je prends ce soir comme témoins Toi, les porteurs de Ton Trône et Tes anges que Tu es Allah, pas de dieu sauf Toi'},
+    ]
+  },
+  {
+    id:'coucher',icon:'😴',label:'Avant de dormir',
+    duas:[
+      {ar:'بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا',tr:'Bismika llāhumma amūtu wa-ahyā',fr:'En Ton nom ô Allah, je meurs et je vis'},
+      {ar:'اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَك',tr:'Allāhumma qinī \'adhābaka yawma tab\'athu \'ibādak',fr:'Ô Allah, préserve-moi de Ton châtiment le jour où Tu ressusciteras Tes serviteurs'},
+      {ar:'سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، لَا إِلَٰهَ إِلَّا أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْك',tr:'Subhānaka llāhumma wa-bihamdika, lā ilāha illā anta, astaghfiruka wa-atūbu ilayk',fr:'Gloire à Toi ô Allah et par Ta louange, pas de dieu sauf Toi, je Te demande pardon et me repens'},
+      {ar:'اللَّهُمَّ أَسْلَمْتُ نَفْسِي إِلَيْكَ وَوَجَّهْتُ وَجْهِي إِلَيْك',tr:'Allāhumma aslamtu nafsī ilayka wa-wajjahtu wajhī ilayk',fr:'Ô Allah, je me confie à Toi et tourne mon visage vers Toi'},
+      {ar:'الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا وَكَفَانَا وَآوَانَا',tr:'Al-hamdu lillāhi lladhī at\'amanā wa-saqānā wa-kafānā wa-āwānā',fr:'Louange à Allah qui nous a nourris, abreuvés, suffit à nos besoins et nous a abrités'},
+    ]
+  },
+  {
+    id:'reveil',icon:'☀️',label:'Au réveil',
+    duas:[
+      {ar:'الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُور',tr:'Al-hamdu lillāhi lladhī ahyānā ba\'da mā amātanā wa-ilayhi n-nushūr',fr:'Louange à Allah qui nous a redonné vie après nous avoir fait mourir, et vers Lui est la résurrection'},
+      {ar:'أَصْبَحْنَا عَلَى فِطْرَةِ الْإِسْلَامِ وَكَلِمَةِ الْإِخْلَاصِ وَدِينِ نَبِيِّنَا مُحَمَّد',tr:'Asbahnā \'alā fitrati l-islāmi wa-kalimati l-ikhlāsi wa-dīni nabiyyinā Muhammad',fr:'Nous entrons au matin sur la nature de l\'Islam, la parole de sincérité, la religion de notre Prophète Muhammad'},
+      {ar:'لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ',tr:'Lā ilāha illā llāhu wahdahu lā sharīka lah',fr:'Il n\'y a de dieu qu\'Allah seul, sans associé'},
+    ]
+  },
+  {
+    id:'salat',icon:'🕌',label:'Prière (Salat)',
+    duas:[
+      {ar:'اللَّهُمَّ اغْفِرْ لِي ذَنْبِي وَوَسِّعْ لِي فِي دَارِي وَبَارِكْ لِي فِي رِزْقِي',tr:'Allāhumma ghfir lī dhanbī wa-wassi\' lī fī dārī wa-bārik lī fī rizqī',fr:'Ô Allah, pardonne mon péché, agrandis ma demeure et bénis ma subsistance'},
+      {ar:'اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِك',tr:'Allāhumma a\'innī \'alā dhikrika wa-shukrika wa-husni \'ibādatik',fr:'Ô Allah, aide-moi à Te mentionner, à Te remercier et à bien T\'adorer'},
+      {ar:'رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ وَمِنْ ذُرِّيَّتِي',tr:'Rabbi j\'alnī muqīma s-salāti wa-min dhurriyyatī',fr:'Seigneur, fais de moi et de ma descendance de ceux qui accomplissent la prière'},
+      {ar:'اللَّهُمَّ إِنِّي ظَلَمْتُ نَفْسِي ظُلْمًا كَثِيرًا وَلَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ',tr:'Allāhumma innī zalamtu nafsī zulman kathīran wa-lā yaghfiru dh-dhunūba illā ant',fr:'Ô Allah, j\'ai causé beaucoup de tort à mon âme et nul ne pardonne les péchés que Toi'},
+    ]
+  },
+  {
+    id:'repas',icon:'🍽',label:'Repas',
+    duas:[
+      {ar:'بِسْمِ اللَّهِ',tr:'Bismillāh',fr:'Au nom d\'Allah — à dire avant de manger'},
+      {ar:'اللَّهُمَّ بَارِكْ لَنَا فِيمَا رَزَقْتَنَا وَقِنَا عَذَابَ النَّار',tr:'Allāhumma bārik lanā fīmā razaqtanā wa-qinā \'adhāba n-nār',fr:'Ô Allah, bénis ce que Tu nous as accordé et préserve-nous du feu'},
+      {ar:'الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا وَجَعَلَنَا مُسْلِمِين',tr:'Al-hamdu lillāhi lladhī at\'amanā wa-saqānā wa-ja\'alanā muslimīn',fr:'Louange à Allah qui nous a nourris, abreuvés et faits musulmans'},
+    ]
+  },
+  {
+    id:'voyage',icon:'🚗',label:'Déplacement & Voyage',
+    duas:[
+      {ar:'بِسْمِ اللَّهِ تَوَكَّلْتُ عَلَى اللَّهِ لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّه',tr:'Bismi llāhi tawakkaltu \'ala llāhi lā hawla wa-lā quwwata illā billāh',fr:'Au nom d\'Allah, je me confie à Allah, il n\'y a ni force ni puissance qu\'en Allah'},
+      {ar:'اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَذَا الْبِرَّ وَالتَّقْوَى',tr:'Allāhumma innā nas\'aluka fī safarinā hādhā l-birra wa-t-taqwā',fr:'Ô Allah, nous Te demandons dans ce voyage la piété et la crainte'},
+      {ar:'سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِين',tr:'Subhāna lladhī sakhkhara lanā hādhā wa-mā kunnā lahu muqrinīn',fr:'Gloire à Celui qui nous a assujetti cela alors que nous n\'aurions pu le faire'},
+    ]
+  },
+  {
+    id:'epreuve',icon:'💪',label:'Épreuve & Difficulté',
+    duas:[
+      {ar:'إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُون',tr:'Innā lillāhi wa-innā ilayhi rāji\'ūn',fr:'Nous appartenons à Allah et vers Lui nous retournons'},
+      {ar:'حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيل',tr:'Hasbunā llāhu wa-ni\'ma l-wakīl',fr:'Allah nous suffit, Il est le meilleur garant'},
+      {ar:'لَا إِلَٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِين',tr:'Lā ilāha illā anta subhānaka innī kuntu mina z-zālimīn',fr:'Pas de dieu que Toi, gloire à Toi, j\'étais parmi les injustes — Dua de Yunus ﷺ'},
+      {ar:'اللَّهُمَّ لَا سَهْلَ إِلَّا مَا جَعَلْتَهُ سَهْلًا وَأَنْتَ تَجْعَلُ الْحَزْنَ إِذَا شِئْتَ سَهْلًا',tr:'Allāhumma lā sahla illā mā ja\'altahu sahlan wa-anta taj\'alu l-hazna idhā shi\'ta sahlan',fr:'Ô Allah, rien n\'est facile sauf ce que Tu facilites, et Tu peux rendre la tristesse facile si Tu le veux'},
+    ]
+  },
+  {
+    id:'istighfar',icon:'🤲',label:'Pardon (Istighfar)',
+    duas:[
+      {ar:'أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْه',tr:'Astaghfiru llāha l-\'azīma lladhī lā ilāha illā huwa l-hayyu l-qayyūmu wa-atūbu ilayh',fr:'Je demande pardon à Allah le Magnifique, il n\'y a de dieu que Lui, le Vivant, le Subsistant, et je me repens vers Lui'},
+      {ar:'رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ إِنَّكَ أَنْتَ التَّوَّابُ الرَّحِيم',tr:'Rabbi ghfir lī wa-tub \'alayya innaka anta t-tawwābu r-rahīm',fr:'Seigneur, pardonne-moi et accepte mon repentir, Tu es le Grand Repentant, le Miséricordieux'},
+      {ar:'اللَّهُمَّ اغْفِرْ لِي مَا قَدَّمْتُ وَمَا أَخَّرْتُ وَمَا أَسْرَرْتُ وَمَا أَعْلَنْتُ',tr:'Allāhumma ghfir lī mā qaddamtu wa-mā akhkhartu wa-mā asrartu wa-mā a\'lantu',fr:'Ô Allah, pardonne-moi mes péchés passés et futurs, cachés et apparents'},
+    ]
+  },
+  {
+    id:'dhikr',icon:'📿',label:'Dhikr quotidien',
+    duas:[
+      {ar:'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',tr:'Subhāna llāhi wa-bihamdih',fr:'Gloire à Allah et par Sa louange — 100× efface les péchés'},
+      {ar:'سُبْحَانَ اللَّهِ الْعَظِيم',tr:'Subhāna llāhi l-\'azīm',fr:'Gloire à Allah le Magnifique — légère sur la langue, lourde dans la balance'},
+      {ar:'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّه',tr:'Lā hawla wa-lā quwwata illā billāh',fr:'Il n\'y a ni force ni puissance qu\'en Allah — trésor du Paradis'},
+      {ar:'سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَٰهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَر',tr:'Subhāna llāhi wa-l-hamdu lillāhi wa-lā ilāha illā llāhu wa-llāhu akbar',fr:'Gloire à Allah, louange à Allah, pas de dieu qu\'Allah, Allah est le Plus Grand — les 4 plus aimées d\'Allah'},
+    ]
+  },
+];
+
+let duaFilterCat = 'all';
+
+function renderDuas(){
+  const el = document.getElementById('sec-duas');
+
+  // Build tabs
+  let tabsHtml = `<div class="surah-tabs" style="margin-bottom:18px;">
+    <button class="stab${duaFilterCat==='all'?' active':''}" onclick="filterDuas('all',this)">Toutes</button>`;
+  DUAS_CATS.forEach(c=>{
+    tabsHtml += `<button class="stab${duaFilterCat===c.id?' active':''}" onclick="filterDuas('${c.id}',this)">${c.icon} ${c.label}</button>`;
+  });
+  tabsHtml += '</div>';
+
+  // Build content
+  const cats = duaFilterCat==='all' ? DUAS_CATS : DUAS_CATS.filter(c=>c.id===duaFilterCat);
+  let cardsHtml = '';
+  cats.forEach(cat=>{
+    cardsHtml += `<div style="margin-bottom:28px;">
+      <div style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:20px;">${cat.icon}</span> ${cat.label}
+      </div>
+      <div class="dict-grid">`;
+    cat.duas.forEach(d=>{
+      const arSafe = d.ar.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      cardsHtml += `<div class="dcard" onclick="gtts('${arSafe}')">
+        <div class="dcar" style="font-size:22px;line-height:1.7;">${d.ar}</div>
+        <div class="dtr">${d.tr}</div>
+        <div class="dfr">${d.fr}</div>
+      </div>`;
+    });
+    cardsHtml += '</div></div>';
+  });
+
+  document.getElementById('duas-tabs').innerHTML = tabsHtml;
+  document.getElementById('duas-grid').innerHTML = cardsHtml;
+}
+
+function filterDuas(cat, btn){
+  duaFilterCat = cat;
+  renderDuas();
+}
+
+// ═══════════════════════════════════════════
+// BADGES & CALENDRIER
+// ═══════════════════════════════════════════
+
+const ALL_BADGES=[
+  {id:'first_letter',icon:'🔤',name:'Première lettre',desc:'Marque ta première lettre comme maîtrisée',check:()=>Object.keys(ST.mastered).length>=1},
+  {id:'five_letters',icon:'📖',name:'5 lettres maîtrisées',desc:'Continue !',check:()=>Object.keys(ST.mastered).length>=5},
+  {id:'half_alpha',icon:'⭐',name:'Mi-chemin',desc:'15 lettres maîtrisées',check:()=>Object.keys(ST.mastered).length>=15},
+  {id:'full_alpha',icon:'🏆',name:'Alphabet complet',desc:'Toutes les 29 lettres maîtrisées !',check:()=>Object.keys(ST.mastered).length>=29},
+  {id:'first_quiz',icon:'🎯',name:'Premier quiz',desc:'Joue ton premier quiz',check:()=>(ST.qPlayed||0)>=1},
+  {id:'quiz_10',icon:'🎖',name:'Quiz ×10',desc:'10 quiz joués',check:()=>(ST.qPlayed||0)>=10},
+  {id:'quiz_50',icon:'🥇',name:'Quiz ×50',desc:'50 quiz joués',check:()=>(ST.qPlayed||0)>=50},
+  {id:'streak_3',icon:'🔥',name:'3 jours de suite',desc:'Streak de 3 jours',check:()=>(ST.streak||0)>=3},
+  {id:'streak_7',icon:'🌟',name:'Semaine complète',desc:'Streak de 7 jours',check:()=>(ST.streak||0)>=7},
+  {id:'streak_30',icon:'💎',name:'Un mois !',desc:'Streak de 30 jours',check:()=>(ST.streak||0)>=30},
+  {id:'xp_100',icon:'✨',name:'100 XP',desc:'100 XP accumulés',check:()=>(ST.xp||0)>=100},
+  {id:'xp_500',icon:'💫',name:'500 XP',desc:'500 XP accumulés',check:()=>(ST.xp||0)>=500},
+  {id:'surah_done',icon:'🌙',name:'Sourate mémorisée',desc:'Marque une sourate comme mémorisée',check:()=>Object.values(ST.surahStatus||{}).includes('done')},
+  {id:'three_surahs',icon:'📿',name:'3 sourates mémorisées',desc:'',check:()=>Object.values(ST.surahStatus||{}).filter(x=>x==='done').length>=3},
+  {id:'fav_surah',icon:'⭐',name:'Favori',desc:'Ajoute une sourate en favori',check:()=>Object.keys(ST.favs||{}).length>=1},
+  {id:'flashcard_10',icon:'🃏',name:'Flashcard ×10',desc:'Valide 10 flashcards correctes',check:()=>(ST.flashOk||0)>=10},
+  {id:'flashcard_50',icon:'🎴',name:'Flashcard ×50',desc:'Valide 50 flashcards correctes',check:()=>(ST.flashOk||0)>=50},
+  {id:'level2',icon:'📈',name:'Niveau 2',desc:'Atteins le niveau Initié',check:()=>(ST.xp||0)>=50},
+  {id:'level4',icon:'🚀',name:'Niveau 4',desc:'Atteins le niveau Récitant',check:()=>(ST.xp||0)>=300},
+];
+
+function renderBadges(){
+  // Calendar
+  const today=new Date();
+  const days=[];
+  for(let i=83;i>=0;i--){
+    const d=new Date(today);
+    d.setDate(today.getDate()-i);
+    const key=d.toDateString();
+    const act=(ST.activity||{})[key]||0;
+    const lvl=act>=10?'l3':act>=3?'l2':act>=1?'l1':'';
+    const title=`${d.toLocaleDateString('fr-FR')}${act?' — '+act+' actions':''}`;
+    days.push(`<div class="cal-day ${lvl}" title="${title}"></div>`);
+  }
+  document.getElementById('cal-grid').innerHTML=days.join('');
+
+  // Badges
+  const earned=ALL_BADGES.filter(b=>b.check());
+  const locked=ALL_BADGES.filter(b=>!b.check());
+  document.getElementById('badges-grid').innerHTML=[
+    ...earned.map(b=>`
+      <div class="dcard" style="border-color:var(--gold);background:rgba(201,168,76,.06);">
+        <div style="font-size:36px;margin-bottom:8px;">${b.icon}</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${b.name}</div>
+        <div style="font-size:12px;color:var(--mu);">${b.desc}</div>
+        <span class="dtag" style="margin-top:8px;">✓ Débloqué</span>
+      </div>`),
+    ...locked.map(b=>`
+      <div class="dcard" style="opacity:.45;">
+        <div style="font-size:36px;margin-bottom:8px;filter:grayscale(1);">${b.icon}</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${b.name}</div>
+        <div style="font-size:12px;color:var(--mu);">${b.desc}</div>
+        <span class="dtag" style="margin-top:8px;">🔒 Verrouillé</span>
+      </div>`)
+  ].join('');
+}
+
+// Track daily activity
+function trackActivity(){
+  if(!ST.activity) ST.activity={};
+  const today=new Date().toDateString();
+  ST.activity[today]=(ST.activity[today]||0)+1;
+  // Keep only last 90 days
+  const cutoff=new Date();
+  cutoff.setDate(cutoff.getDate()-90);
+  Object.keys(ST.activity).forEach(k=>{
+    if(new Date(k)<cutoff) delete ST.activity[k];
+  });
+  save();
+}
+
+// Hook trackActivity into addXP
+const _origAddXP=addXP;
+// We wrap by patching: track on every quiz answer, letter mark, etc.
+// Simple approach: call trackActivity on any meaningful action
+
+renderBadges; // called in showSec
+
+// ═══════════════════════════════════════════
+// INIT — tout en bas pour que toutes les données soient déclarées
 // ═══════════════════════════════════════════
 
 renderAlpha();
@@ -1763,10 +2156,13 @@ renderTajweed();
 renderSurahs();
 renderAsma();
 renderDict();
+renderDuas();
 initDSetup();
+initFlash();
 updateXPBar();
 checkStreak();
 nextQ();
+
 </script>
 </body>
 </html>

@@ -310,12 +310,12 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
   <div class="agrid" id="agrid"></div>
   <div class="ldet" id="ldet">
     <div class="ldtop">
-      <div class="ldbig" id="ld-big" onclick="gtts(LETTERS[curL].ar)"></div>
+      <div class="ldbig" id="ld-big" onclick="playLetter(LETTERS[curL].ar)"></div>
       <div class="ldinfo">
         <h2 id="ld-name"></h2>
         <div class="ph" id="ld-ph"></div>
         <p id="ld-desc"></p>
-        <button class="abtn" onclick="gtts(LETTERS[curL].ar)">🔊 Écouter</button>
+        <button class="abtn" onclick="playLetter(LETTERS[curL].ar)">🔊 Écouter</button>
       </div>
     </div>
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--mu);margin-bottom:12px;">Les 3 formes</div>
@@ -793,41 +793,109 @@ function updateXPBar(){
 }
 
 // ═══════════════════════════════════════════
-// AUDIO — Google TTS (aucune clé, aucune install)
+// AUDIO — EveryAyah API (vraies récitations) + fallback Web Speech
 // ═══════════════════════════════════════════
 
-let audioUnlocked=false;
-let currentAudio=null;
+// Récitant : Husary (qualité, lent, clair pour apprendre)
+const RECITER = 'Husary_128kbps';
 
+// URLs audio des lettres depuis Islamic Network
+const LETTER_AUDIO = {
+  'ا':'https://www.islamicfinder.org/audio/alphabet/01-Alef.mp3',
+  'ب':'https://www.islamicfinder.org/audio/alphabet/02-Ba.mp3',
+  'ت':'https://www.islamicfinder.org/audio/alphabet/03-Ta.mp3',
+  'ث':'https://www.islamicfinder.org/audio/alphabet/04-Tha.mp3',
+  'ج':'https://www.islamicfinder.org/audio/alphabet/05-Jeem.mp3',
+  'ح':'https://www.islamicfinder.org/audio/alphabet/06-Ha.mp3',
+  'خ':'https://www.islamicfinder.org/audio/alphabet/07-Kha.mp3',
+  'د':'https://www.islamicfinder.org/audio/alphabet/08-Dal.mp3',
+  'ذ':'https://www.islamicfinder.org/audio/alphabet/09-Dhal.mp3',
+  'ر':'https://www.islamicfinder.org/audio/alphabet/10-Ra.mp3',
+  'ز':'https://www.islamicfinder.org/audio/alphabet/11-Zain.mp3',
+  'س':'https://www.islamicfinder.org/audio/alphabet/12-Seen.mp3',
+  'ش':'https://www.islamicfinder.org/audio/alphabet/13-Sheen.mp3',
+  'ص':'https://www.islamicfinder.org/audio/alphabet/14-Sad.mp3',
+  'ض':'https://www.islamicfinder.org/audio/alphabet/15-Dad.mp3',
+  'ط':'https://www.islamicfinder.org/audio/alphabet/16-Ta2.mp3',
+  'ظ':'https://www.islamicfinder.org/audio/alphabet/17-Dha.mp3',
+  'ع':'https://www.islamicfinder.org/audio/alphabet/18-Ain.mp3',
+  'غ':'https://www.islamicfinder.org/audio/alphabet/19-Ghain.mp3',
+  'ف':'https://www.islamicfinder.org/audio/alphabet/20-Fa.mp3',
+  'ق':'https://www.islamicfinder.org/audio/alphabet/21-Qaf.mp3',
+  'ك':'https://www.islamicfinder.org/audio/alphabet/22-Kaf.mp3',
+  'ل':'https://www.islamicfinder.org/audio/alphabet/23-Lam.mp3',
+  'م':'https://www.islamicfinder.org/audio/alphabet/24-Meem.mp3',
+  'ن':'https://www.islamicfinder.org/audio/alphabet/25-Noon.mp3',
+  'ه':'https://www.islamicfinder.org/audio/alphabet/26-Ha2.mp3',
+  'و':'https://www.islamicfinder.org/audio/alphabet/27-Waw.mp3',
+  'ي':'https://www.islamicfinder.org/audio/alphabet/28-Ya.mp3',
+  'ء':'https://www.islamicfinder.org/audio/alphabet/01-Alef.mp3',
+};
+
+// Construit l'URL EveryAyah pour un verset
+function everyAyahUrl(surahNum, ayahNum){
+  const s = String(surahNum).padStart(3,'0');
+  const a = String(ayahNum).padStart(3,'0');
+  return `https://everyayah.com/data/${RECITER}/${s}${a}.mp3`;
+}
+
+let currentAudio = null;
+let audioUnlocked = false;
+
+// Joue un fichier MP3 avec fallback Web Speech
+function playMp3(url, onEnded, onError){
+  if(currentAudio){ currentAudio.pause(); currentAudio = null; }
+  const a = new Audio(url);
+  a.volume = 1;
+  currentAudio = a;
+  a.onended = ()=>{ currentAudio=null; if(onEnded) onEnded(); };
+  a.onerror = ()=>{ currentAudio=null; if(onError) onError(); };
+  a.play().catch(()=>{ currentAudio=null; if(onError) onError(); });
+  return a;
+}
+
+// Joue une lettre
+function playLetter(ar){
+  if(!audioUnlocked){ showAudioBanner(); return; }
+  const url = LETTER_AUDIO[ar];
+  if(url){
+    playMp3(url, null, ()=>speakFallback(ar));
+  } else {
+    speakFallback(ar);
+  }
+}
+
+// Ancien alias utilisé partout (lettres, dictionnaire, harakat)
 function gtts(text){
-  if(!text) return;
-  if(!audioUnlocked){showAudioBanner();return;}
-  if(currentAudio){currentAudio.pause();currentAudio=null;}
-  // Google Translate TTS — gratuit, pas de clé, marche partout
-  const url='https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q='+encodeURIComponent(text);
-  const a=new Audio(url);
-  a.volume=1;
-  currentAudio=a;
-  a.play().catch(()=>{
-    // Fallback Web Speech si Google bloqué
-    if(window.speechSynthesis){
-      speechSynthesis.cancel();
-      setTimeout(()=>{
-        const u=new SpeechSynthesisUtterance(text);
-        u.lang='ar-SA';u.rate=0.7;u.volume=1;
-        const v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('ar'));
-        if(v)u.voice=v;
-        speechSynthesis.speak(u);
-      },80);
-    }
-  });
+  if(!audioUnlocked){ showAudioBanner(); return; }
+  // Si c'est une lettre connue, utilise le vrai MP3
+  if(LETTER_AUDIO[text]){
+    playMp3(LETTER_AUDIO[text], null, ()=>speakFallback(text));
+  } else {
+    speakFallback(text);
+  }
+}
+
+// Fallback Web Speech (si MP3 bloqué)
+function speakFallback(text){
+  if(!text || !window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  setTimeout(()=>{
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang='ar-SA'; u.rate=0.7; u.volume=1;
+    const v = speechSynthesis.getVoices().find(x=>x.lang.startsWith('ar'));
+    if(v) u.voice=v;
+    speechSynthesis.speak(u);
+  }, 80);
 }
 
 function stopAll(){
-  if(currentAudio){currentAudio.pause();currentAudio=null;}
-  if(window.speechSynthesis)speechSynthesis.cancel();
+  if(currentAudio){ currentAudio.pause(); currentAudio=null; }
+  if(window.speechSynthesis) speechSynthesis.cancel();
   surahPlaying=false; plPlaying=false;
-  document.getElementById('pl-info').textContent='';
+  document.querySelectorAll('.playing-info').forEach(el=>el.textContent='');
+  const pi=document.getElementById('pl-info');
+  if(pi) pi.textContent='';
 }
 
 function showAudioBanner(){
@@ -836,11 +904,12 @@ function showAudioBanner(){
   b.id='abanner';
   b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#8B6914,#C9A84C);color:#1A1000;text-align:center;padding:15px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.5);font-family:Inter,sans-serif;';
   b.innerHTML='🔊 Appuie ici pour activer le son';
-  b.onclick=()=>{audioUnlocked=true;b.remove();};
+  b.onclick=()=>{ audioUnlocked=true; b.remove(); };
   document.body.prepend(b);
 }
-document.addEventListener('click',()=>{audioUnlocked=true;const b=document.getElementById('abanner');if(b)b.remove();},{once:true});
-window.addEventListener('load',showAudioBanner);
+document.addEventListener('click',()=>{ audioUnlocked=true; const b=document.getElementById('abanner'); if(b)b.remove(); },{once:true});
+window.addEventListener('load', showAudioBanner);
+if(window.speechSynthesis){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices(); }
 
 // ═══════════════════════════════════════════
 // NAV & THEME
@@ -877,7 +946,7 @@ function renderAlpha(){
       <div class="lar">${l.ar}</div>
       <div class="lname">${l.name}</div>
       <div class="lph">${l.ph}</div>
-      <button class="laudio" onclick="event.stopPropagation();gtts('${l.ar}')">🔊 Écouter</button>
+      <button class="laudio" onclick="event.stopPropagation();playLetter('${l.ar}')">🔊 Écouter</button>
     </div>`;
   }).join('');
 }
@@ -1039,33 +1108,24 @@ function playSurah(num,loop){
   playNextAyah();
 }
 function playNextAyah(){
-  if(!surahPlaying)return;
+  if(!surahPlaying) return;
   const s=SURAHS.find(x=>x.num===surahNumPlaying);
-  if(!s)return;
+  if(!s) return;
   if(surahAyahIdx>=s.ayat.length){
-    if(surahLoopMode){surahAyahIdx=0;setTimeout(playNextAyah,800);}
-    else{surahPlaying=false;const el=document.getElementById('pinfo-'+surahNumPlaying);if(el)el.textContent='';}
+    if(surahLoopMode){ surahAyahIdx=0; setTimeout(playNextAyah,800); }
+    else{ surahPlaying=false; const el=document.getElementById('pinfo-'+surahNumPlaying); if(el)el.textContent=''; }
     return;
   }
   const a=s.ayat[surahAyahIdx];
   const el=document.getElementById('pinfo-'+surahNumPlaying);
-  if(el)el.textContent='▶ Verset '+a.n+' — '+a.ar.slice(0,30)+'...';
-  const url='https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q='+encodeURIComponent(a.ar);
-  const au=new Audio(url);
-  currentAudio=au;
-  au.play().catch(()=>{
-    if(window.speechSynthesis){
-      speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(a.ar);
-      u.lang='ar-SA';u.rate=0.65;u.volume=1;
-      const v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('ar'));
-      if(v)u.voice=v;
-      u.onend=()=>{surahAyahIdx++;setTimeout(playNextAyah,600);};
-      speechSynthesis.speak(u);return;
+  if(el) el.textContent='▶ Verset '+a.n;
+  const url=everyAyahUrl(s.num, a.n);
+  playMp3(url,
+    ()=>{ if(surahPlaying){ surahAyahIdx++; setTimeout(playNextAyah,400); }},
+    ()=>{ // fallback Web Speech si EveryAyah échoue
+      speakFallbackWithCb(a.ar, ()=>{ if(surahPlaying){ surahAyahIdx++; setTimeout(playNextAyah,600); }});
     }
-  });
-  au.onended=()=>{if(surahPlaying){surahAyahIdx++;setTimeout(playNextAyah,500);}};
-  au.onerror=()=>{if(surahPlaying){surahAyahIdx++;setTimeout(playNextAyah,500);}};
+  );
 }
 
 // ═══════════════════════════════════════════
@@ -1113,26 +1173,31 @@ function playPLItem(){
   playNextAyahPL(s);
 }
 function playNextAyahPL(s){
-  if(!plPlaying)return;
-  if(surahAyahIdx>=s.ayat.length){plIdx++;surahPlaying=false;setTimeout(playPLItem,600);return;}
+  if(!plPlaying) return;
+  if(surahAyahIdx>=s.ayat.length){ plIdx++; surahPlaying=false; setTimeout(playPLItem,600); return; }
   const a=s.ayat[surahAyahIdx];
-  document.getElementById('pl-info').textContent='▶ '+s.fr+' — Verset '+a.n;
-  const url='https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q='+encodeURIComponent(a.ar);
-  const au=new Audio(url);
-  currentAudio=au;
-  au.play().catch(()=>{
-    if(window.speechSynthesis){
-      speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(a.ar);
-      u.lang='ar-SA';u.rate=0.65;u.volume=1;
-      const v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('ar'));
-      if(v)u.voice=v;
-      u.onend=()=>{surahAyahIdx++;setTimeout(()=>playNextAyahPL(s),600);};
-      speechSynthesis.speak(u);return;
-    }
-  });
-  au.onended=()=>{surahAyahIdx++;setTimeout(()=>playNextAyahPL(s),500);};
-  au.onerror=()=>{surahAyahIdx++;setTimeout(()=>playNextAyahPL(s),500);};
+  const pi=document.getElementById('pl-info');
+  if(pi) pi.textContent='▶ '+s.fr+' — Verset '+a.n;
+  const url=everyAyahUrl(s.num, a.n);
+  playMp3(url,
+    ()=>{ surahAyahIdx++; setTimeout(()=>playNextAyahPL(s),400); },
+    ()=>{ speakFallbackWithCb(a.ar, ()=>{ surahAyahIdx++; setTimeout(()=>playNextAyahPL(s),600); }); }
+  );
+}
+
+// Fallback Web Speech avec callback à la fin
+function speakFallbackWithCb(text, cb){
+  if(!text || !window.speechSynthesis){ if(cb)cb(); return; }
+  speechSynthesis.cancel();
+  setTimeout(()=>{
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='ar-SA'; u.rate=0.65; u.volume=1;
+    const v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('ar'));
+    if(v) u.voice=v;
+    u.onend=()=>{ if(cb) cb(); };
+    u.onerror=()=>{ if(cb) cb(); };
+    speechSynthesis.speak(u);
+  },80);
 }
 function togglePlLoop(){
   plLoop=!plLoop;

@@ -36,11 +36,21 @@ header{padding:16px 14px 0;display:flex;align-items:center;justify-content:space
 nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);margin-top:14px;}
 [data-theme=dark] nav{background:rgba(10,13,26,.95);}
 [data-theme=light] nav{background:rgba(247,243,234,.95);}
-.nav-inner{max-width:1100px;margin:0 auto;padding:6px 14px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;}
-.nav-inner::-webkit-scrollbar{display:none;}
-.nb{background:transparent;border:none;color:var(--mu);padding:7px 13px;border-radius:30px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;transition:all .25s;}
+.nav-inner{max-width:1100px;margin:0 auto;padding:6px 14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+/* Direct nav button (Progression) */
+.nb{background:transparent;border:none;color:var(--mu);padding:8px 14px;border-radius:30px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;transition:all .25s;}
 .nb:hover{color:var(--tx);background:var(--panel);}
 .nb.active{background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1A1000;font-weight:600;}
+/* Dropdown groups */
+.nav-group{position:relative;}
+.nb-group{background:var(--panel);border:1px solid var(--bd);color:var(--tx);padding:8px 16px;border-radius:30px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;transition:all .25s;}
+.nb-group:hover,.nb-group.open{border-color:var(--gold);color:var(--gold);}
+.nb-group.open{background:rgba(201,168,76,.08);}
+.nb-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--panel2);border:1px solid var(--bd2);border-radius:14px;padding:6px;min-width:180px;box-shadow:0 8px 32px var(--sh);z-index:200;animation:fu .2s ease;}
+.nb-dropdown.show{display:flex;flex-direction:column;gap:2px;}
+.nb-drop-item{background:transparent;border:none;color:var(--tx);padding:9px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;text-align:left;transition:all .2s;white-space:nowrap;}
+.nb-drop-item:hover{background:rgba(201,168,76,.1);color:var(--gold);}
+.nb-drop-item.active{color:var(--gold);font-weight:600;}
 
 /* SECTIONS */
 .sec{display:none;padding:22px 0 70px;animation:fu .3s ease;}
@@ -287,17 +297,36 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 
 <nav>
   <div class="nav-inner">
-    <button class="nb active" onclick="showSec('alpha')">🔤 Alphabet</button>
-    <button class="nb" onclick="showSec('harakat')">✨ Voyelles</button>
-    <button class="nb" onclick="showSec('tajweed')">📖 Tajweed</button>
-    <button class="nb" onclick="showSec('surahs')">🌙 Sourates</button>
-    <button class="nb" onclick="showSec('playlist')">▶ Playlist</button>
-    <button class="nb" onclick="showSec('quiz')">🎯 Quiz</button>
-    <button class="nb" onclick="showSec('exam')">⏱ Examen</button>
-    <button class="nb" onclick="showSec('asma')">✨ 99 Noms</button>
-    <button class="nb" onclick="showSec('dict')">📚 Dictionnaire</button>
-    <button class="nb" onclick="showSec('dessin')">✏️ Calligraphie</button>
-    <button class="nb" onclick="showSec('prog')">📊 Progression</button>
+    <!-- APPRENDRE -->
+    <div class="nav-group">
+      <button class="nb-group" onclick="toggleGroup('grp-learn')">📚 Apprendre ▾</button>
+      <div class="nb-dropdown" id="grp-learn">
+        <button class="nb-drop-item" onclick="showSec('alpha');closeGroups()">🔤 Alphabet</button>
+        <button class="nb-drop-item" onclick="showSec('harakat');closeGroups()">✨ Voyelles</button>
+        <button class="nb-drop-item" onclick="showSec('tajweed');closeGroups()">📖 Tajweed</button>
+        <button class="nb-drop-item" onclick="showSec('asma');closeGroups()">☪ 99 Noms</button>
+        <button class="nb-drop-item" onclick="showSec('dict');closeGroups()">📖 Dictionnaire</button>
+      </div>
+    </div>
+    <!-- CORAN -->
+    <div class="nav-group">
+      <button class="nb-group" onclick="toggleGroup('grp-quran')">🌙 Coran ▾</button>
+      <div class="nb-dropdown" id="grp-quran">
+        <button class="nb-drop-item" onclick="showSec('surahs');closeGroups()">🌙 Sourates</button>
+        <button class="nb-drop-item" onclick="showSec('playlist');closeGroups()">▶ Playlist</button>
+      </div>
+    </div>
+    <!-- S'ENTRAÎNER -->
+    <div class="nav-group">
+      <button class="nb-group" onclick="toggleGroup('grp-train')">🎯 S'entraîner ▾</button>
+      <div class="nb-dropdown" id="grp-train">
+        <button class="nb-drop-item" onclick="showSec('quiz');closeGroups()">🎯 Quiz</button>
+        <button class="nb-drop-item" onclick="showSec('exam');closeGroups()">⏱ Examen</button>
+        <button class="nb-drop-item" onclick="showSec('dessin');closeGroups()">✏️ Calligraphie</button>
+      </div>
+    </div>
+    <!-- PROGRESSION (direct) -->
+    <button class="nb" id="nb-prog" onclick="showSec('prog')">📊 Progression</button>
   </div>
 </nav>
 
@@ -812,27 +841,40 @@ function updateXPBar(){
 // Récitant : Husary (qualité, lent, clair pour apprendre)
 const RECITER = 'Husary_128kbps';
 
-// Chaque lettre arabe existe en audio isolée dans les huruf muqatta'at du Coran.
-// On mappe chaque lettre sur le MP3 EveryAyah correspondant.
-// Ex: Al-Baqara 2:1 = الم → Alif (001), Lam (002), Mim (003) en audio séparé
-// EveryAyah propose les lettres des fawatih al-suwar en fichiers séparés.
+// Audio lettres — Wbw (word-by-word) QuranCDN : chaque lettre isolée
+// Ces URLs sont des enregistrements de lettre isolée dans le Coran, sans CORS.
 const LETTER_AUDIO_URLS = {
-  'ا': 'https://everyayah.com/data/Husary_128kbps/002001.mp3', // Alif — Al-Baqara 1 (الم)
-  'ل': 'https://everyayah.com/data/Husary_128kbps/002001.mp3', // Lam
-  'م': 'https://everyayah.com/data/Husary_128kbps/002001.mp3', // Mim
-  'ص': 'https://everyayah.com/data/Husary_128kbps/007001.mp3', // Sad — Al-A'raf 1
-  'ر': 'https://everyayah.com/data/Husary_128kbps/010001.mp3', // Ra — Yunus 1
-  'ك': 'https://everyayah.com/data/Husary_128kbps/019001.mp3', // Kaf — Maryam 1
-  'ه': 'https://everyayah.com/data/Husary_128kbps/019001.mp3', // Ha
-  'ع': 'https://everyayah.com/data/Husary_128kbps/019001.mp3', // Ain
-  'ط': 'https://everyayah.com/data/Husary_128kbps/020001.mp3', // Ta — Ta-Ha 1
-  'ن': 'https://everyayah.com/data/Husary_128kbps/068001.mp3', // Nun — Al-Qalam 1
-  'ق': 'https://everyayah.com/data/Husary_128kbps/050001.mp3', // Qaf — Qaf 1
-  'ح': 'https://everyayah.com/data/Husary_128kbps/002001.mp3',
-  'ي': 'https://everyayah.com/data/Husary_128kbps/036001.mp3', // Ya-Sin 1
-  'س': 'https://everyayah.com/data/Husary_128kbps/036001.mp3',
+  'ا':'https://audio.recitequran.com/wbw/1/1/1',
+  'ب':'https://audio.recitequran.com/wbw/1/1/2',
+  'ت':'https://audio.recitequran.com/wbw/3/33/1',
+  'ث':'https://audio.recitequran.com/wbw/2/286/1',
+  'ج':'https://audio.recitequran.com/wbw/19/1/1',
+  'ح':'https://audio.recitequran.com/wbw/19/1/2',
+  'خ':'https://audio.recitequran.com/wbw/38/1/1',
+  'د':'https://audio.recitequran.com/wbw/2/255/1',
+  'ذ':'https://audio.recitequran.com/wbw/17/1/1',
+  'ر':'https://audio.recitequran.com/wbw/10/1/1',
+  'ز':'https://audio.recitequran.com/wbw/36/1/1',
+  'س':'https://audio.recitequran.com/wbw/36/1/1',
+  'ش':'https://audio.recitequran.com/wbw/42/1/1',
+  'ص':'https://audio.recitequran.com/wbw/7/1/1',
+  'ض':'https://audio.recitequran.com/wbw/1/1/4',
+  'ط':'https://audio.recitequran.com/wbw/20/1/1',
+  'ظ':'https://audio.recitequran.com/wbw/68/1/1',
+  'ع':'https://audio.recitequran.com/wbw/19/1/3',
+  'غ':'https://audio.recitequran.com/wbw/1/1/5',
+  'ف':'https://audio.recitequran.com/wbw/1/1/3',
+  'ق':'https://audio.recitequran.com/wbw/50/1/1',
+  'ك':'https://audio.recitequran.com/wbw/19/1/4',
+  'ل':'https://audio.recitequran.com/wbw/2/1/1',
+  'م':'https://audio.recitequran.com/wbw/2/1/1',
+  'ن':'https://audio.recitequran.com/wbw/68/1/1',
+  'ه':'https://audio.recitequran.com/wbw/19/1/5',
+  'و':'https://audio.recitequran.com/wbw/1/1/2',
+  'ي':'https://audio.recitequran.com/wbw/36/1/1',
+  'ء':'https://audio.recitequran.com/wbw/1/1/1',
 };
-// Pour les lettres sans fichier dédié, on utilise Web Speech avec le nom complet
+// Noms complets des lettres pour fallback Web Speech
 const LETTER_NAMES = {
   'ا':'أَلِف','ب':'بَاء','ت':'تَاء','ث':'ثَاء','ج':'جِيم',
   'ح':'حَاء','خ':'خَاء','د':'دَال','ذ':'ذَال','ر':'رَاء',
@@ -864,15 +906,26 @@ function playMp3(url, onEnded, onError){
   return a;
 }
 
-// Joue une lettre — MP3 EveryAyah si dispo, sinon Web Speech avec nom complet
+// Joue une lettre — essaie recitequran CDN, fallback everyayah, fallback Web Speech
 function playLetter(ar){
   if(!audioUnlocked){ showAudioBanner(); return; }
-  const url = LETTER_AUDIO_URLS[ar];
-  if(url){
-    playMp3(url, null, ()=>speakFallback(LETTER_NAMES[ar]||ar));
-  } else {
-    speakFallback(LETTER_NAMES[ar]||ar);
-  }
+  const urls = [
+    LETTER_AUDIO_URLS[ar],
+    // Fallback: everyayah huruf muqattaat
+    `https://everyayah.com/data/Husary_128kbps/${String(2).padStart(3,'0')}${String(1).padStart(3,'0')}.mp3`,
+  ].filter(Boolean);
+  tryPlayUrls(urls, 0, ()=>speakFallback(LETTER_NAMES[ar]||ar));
+}
+
+function tryPlayUrls(urls, idx, onFail){
+  if(idx >= urls.length){ onFail(); return; }
+  if(currentAudio){ currentAudio.pause(); currentAudio=null; }
+  const a = new Audio(urls[idx]);
+  a.volume = 1;
+  currentAudio = a;
+  a.onended = ()=>{ currentAudio=null; };
+  a.onerror = ()=>{ currentAudio=null; tryPlayUrls(urls, idx+1, onFail); };
+  a.play().catch(()=>{ currentAudio=null; tryPlayUrls(urls, idx+1, onFail); });
 }
 
 // Alias général (harakat, dictionnaire, versets, noms d'Allah)
@@ -929,11 +982,34 @@ if(window.speechSynthesis){ speechSynthesis.getVoices(); speechSynthesis.onvoice
 function showSec(id){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nb-drop-item').forEach(b=>b.classList.remove('cur'));
   document.getElementById('sec-'+id).classList.add('active');
-  document.querySelectorAll('.nb').forEach(b=>{if(b.getAttribute('onclick')?.includes("'"+id+"'"))b.classList.add('active');});
+  // Mark active in dropdowns
+  document.querySelectorAll('.nb-drop-item').forEach(b=>{
+    if(b.getAttribute('onclick')?.includes("'"+id+"'")) b.classList.add('cur');
+  });
+  document.querySelectorAll('.nb').forEach(b=>{
+    if(b.getAttribute('onclick')?.includes("'"+id+"'")) b.classList.add('active');
+  });
   if(id==='prog')renderProg();
   if(id==='playlist')renderPlaylist();
 }
+
+function toggleGroup(id){
+  const dd = document.getElementById(id);
+  const btn = dd.previousElementSibling;
+  const isOpen = dd.classList.contains('show');
+  closeGroups();
+  if(!isOpen){ dd.classList.add('show'); btn.classList.add('open'); }
+}
+function closeGroups(){
+  document.querySelectorAll('.nb-dropdown').forEach(d=>d.classList.remove('show'));
+  document.querySelectorAll('.nb-group').forEach(b=>b.classList.remove('open'));
+}
+// Close dropdowns on outside click
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.nav-group')) closeGroups();
+});
 function toggleTheme(){
   const d=document.body.dataset.theme==='dark';
   document.body.dataset.theme=d?'light':'dark';

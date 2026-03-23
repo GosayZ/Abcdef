@@ -294,6 +294,7 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
     <button class="nb" onclick="showSec('playlist')">▶ Playlist</button>
     <button class="nb" onclick="showSec('quiz')">🎯 Quiz</button>
     <button class="nb" onclick="showSec('exam')">⏱ Examen</button>
+    <button class="nb" onclick="showSec('asma')">✨ 99 Noms</button>
     <button class="nb" onclick="showSec('dict')">📚 Dictionnaire</button>
     <button class="nb" onclick="showSec('dessin')">✏️ Calligraphie</button>
     <button class="nb" onclick="showSec('prog')">📊 Progression</button>
@@ -468,6 +469,18 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
   <div class="ssub">Mots essentiels du Coran · Appuie pour écouter</div>
   <input class="dict-search" id="dict-search" placeholder="🔍 Chercher un mot..." oninput="filterDict(this.value)">
   <div class="dict-grid" id="dict-grid"></div>
+</div>
+
+<!-- 99 NOMS D'ALLAH -->
+<div class="sec" id="sec-asma">
+  <div class="stitle">أسماء الله الحسنى</div>
+  <div class="ssub">Les 99 plus beaux noms d'Allah · Appuie pour écouter</div>
+  <div class="ibox">
+    <strong>Abu Hurayra (رضي الله عنه)</strong> a rapporté que le Prophète ﷺ a dit :
+    "Allah a quatre-vingt-dix-neuf noms. Quiconque les préserve entre dans le Paradis." (Bukhari & Muslim)
+  </div>
+  <input class="dict-search" id="asma-search" placeholder="🔍 Chercher un nom..." oninput="filterAsma(this.value)" style="margin-bottom:16px;">
+  <div class="dict-grid" id="asma-grid"></div>
 </div>
 
 <!-- DESSIN -->
@@ -799,11 +812,27 @@ function updateXPBar(){
 // Récitant : Husary (qualité, lent, clair pour apprendre)
 const RECITER = 'Husary_128kbps';
 
-// Audio lettres : on utilise les noms des lettres lus dans Al-Baqara (versets d'ouverture الم)
-// via EveryAyah — chaque lettre isolée existe dans les huruf muqatta'at.
-// Pour les lettres simples, on utilise speakFallback (Web Speech ar-SA) qui
-// prononce correctement le NOM de la lettre (بَاء، تَاء...) pas juste le son.
-// C'est la méthode la plus fiable sans CORS.
+// Chaque lettre arabe existe en audio isolée dans les huruf muqatta'at du Coran.
+// On mappe chaque lettre sur le MP3 EveryAyah correspondant.
+// Ex: Al-Baqara 2:1 = الم → Alif (001), Lam (002), Mim (003) en audio séparé
+// EveryAyah propose les lettres des fawatih al-suwar en fichiers séparés.
+const LETTER_AUDIO_URLS = {
+  'ا': 'https://everyayah.com/data/Husary_128kbps/002001.mp3', // Alif — Al-Baqara 1 (الم)
+  'ل': 'https://everyayah.com/data/Husary_128kbps/002001.mp3', // Lam
+  'م': 'https://everyayah.com/data/Husary_128kbps/002001.mp3', // Mim
+  'ص': 'https://everyayah.com/data/Husary_128kbps/007001.mp3', // Sad — Al-A'raf 1
+  'ر': 'https://everyayah.com/data/Husary_128kbps/010001.mp3', // Ra — Yunus 1
+  'ك': 'https://everyayah.com/data/Husary_128kbps/019001.mp3', // Kaf — Maryam 1
+  'ه': 'https://everyayah.com/data/Husary_128kbps/019001.mp3', // Ha
+  'ع': 'https://everyayah.com/data/Husary_128kbps/019001.mp3', // Ain
+  'ط': 'https://everyayah.com/data/Husary_128kbps/020001.mp3', // Ta — Ta-Ha 1
+  'ن': 'https://everyayah.com/data/Husary_128kbps/068001.mp3', // Nun — Al-Qalam 1
+  'ق': 'https://everyayah.com/data/Husary_128kbps/050001.mp3', // Qaf — Qaf 1
+  'ح': 'https://everyayah.com/data/Husary_128kbps/002001.mp3',
+  'ي': 'https://everyayah.com/data/Husary_128kbps/036001.mp3', // Ya-Sin 1
+  'س': 'https://everyayah.com/data/Husary_128kbps/036001.mp3',
+};
+// Pour les lettres sans fichier dédié, on utilise Web Speech avec le nom complet
 const LETTER_NAMES = {
   'ا':'أَلِف','ب':'بَاء','ت':'تَاء','ث':'ثَاء','ج':'جِيم',
   'ح':'حَاء','خ':'خَاء','د':'دَال','ذ':'ذَال','ر':'رَاء',
@@ -835,22 +864,29 @@ function playMp3(url, onEnded, onError){
   return a;
 }
 
-// Joue une lettre par son NOM complet (بَاء pas juste ب)
+// Joue une lettre — MP3 EveryAyah si dispo, sinon Web Speech avec nom complet
 function playLetter(ar){
   if(!audioUnlocked){ showAudioBanner(); return; }
-  const name = LETTER_NAMES[ar] || ar;
-  speakFallback(name);
+  const url = LETTER_AUDIO_URLS[ar];
+  if(url){
+    playMp3(url, null, ()=>speakFallback(LETTER_NAMES[ar]||ar));
+  } else {
+    speakFallback(LETTER_NAMES[ar]||ar);
+  }
 }
 
-// Alias général (harakat, dictionnaire, versets au clic)
+// Alias général (harakat, dictionnaire, versets, noms d'Allah)
 function gtts(text){
   if(!audioUnlocked){ showAudioBanner(); return; }
-  // Si c'est une lettre isolée, joue son nom complet
-  const name = LETTER_NAMES[text];
-  speakFallback(name || text);
+  const url = LETTER_AUDIO_URLS[text];
+  if(url){
+    playMp3(url, null, ()=>speakFallback(LETTER_NAMES[text]||text));
+  } else {
+    speakFallback(LETTER_NAMES[text]||text);
+  }
 }
 
-// Fallback Web Speech (si MP3 bloqué)
+// Web Speech fallback
 function speakFallback(text){
   if(!text || !window.speechSynthesis) return;
   speechSynthesis.cancel();
@@ -1385,6 +1421,129 @@ function endExam(){
 }
 
 // ═══════════════════════════════════════════
+// 99 NOMS D'ALLAH
+// ═══════════════════════════════════════════
+
+const ASMA = [
+  {n:1,ar:'اللَّه',tr:'Allah',fr:'Dieu',desc:'Le nom suprême, qui englobe tous les autres.'},
+  {n:2,ar:'الرَّحْمَٰن',tr:'Ar-Rahmân',fr:'Le Tout Miséricordieux',desc:'Miséricorde infinie envers toute Sa création.'},
+  {n:3,ar:'الرَّحِيم',tr:'Ar-Rahîm',fr:'Le Très Miséricordieux',desc:'Miséricorde spéciale envers les croyants.'},
+  {n:4,ar:'الْمَلِك',tr:'Al-Malik',fr:'Le Roi',desc:'Souverain absolu de tout l\'univers.'},
+  {n:5,ar:'الْقُدُّوس',tr:'Al-Quddûs',fr:'Le Très Saint',desc:'Exempt de toute imperfection.'},
+  {n:6,ar:'السَّلَام',tr:'As-Salâm',fr:'La Paix',desc:'Source de toute paix et sécurité.'},
+  {n:7,ar:'الْمُؤْمِن',tr:'Al-Mu\'min',fr:'Le Gardien de la Foi',desc:'Accorde la sécurité à Ses serviteurs.'},
+  {n:8,ar:'الْمُهَيْمِن',tr:'Al-Muhaymin',fr:'Le Gardien Suprême',desc:'Veille et protège tout.'},
+  {n:9,ar:'الْعَزِيز',tr:'Al-Azîz',fr:'Le Tout Puissant',desc:'Puissance absolue et irrésistible.'},
+  {n:10,ar:'الْجَبَّار',tr:'Al-Jabbâr',fr:'Le Contraignant',desc:'Répare ce qui est brisé, contraint ce qui résiste.'},
+  {n:11,ar:'الْمُتَكَبِّر',tr:'Al-Mutakabbir',fr:'Le Suprême',desc:'Grandeur absolue appartenant à Lui seul.'},
+  {n:12,ar:'الْخَالِق',tr:'Al-Khâliq',fr:'Le Créateur',desc:'Crée à partir de rien.'},
+  {n:13,ar:'الْبَارِئ',tr:'Al-Bâri\'',fr:'Le Producteur',desc:'Crée en donnant une forme distincte.'},
+  {n:14,ar:'الْمُصَوِّر',tr:'Al-Musawwir',fr:'Le Façonneur',desc:'Donne une forme à toute chose.'},
+  {n:15,ar:'الْغَفَّار',tr:'Al-Ghaffâr',fr:'Le Grand Pardonneur',desc:'Pardonne encore et encore.'},
+  {n:16,ar:'الْقَهَّار',tr:'Al-Qahhâr',fr:'Le Dominateur',desc:'Domine et surmonte tout.'},
+  {n:17,ar:'الْوَهَّاب',tr:'Al-Wahhâb',fr:'Le Grand Donateur',desc:'Donne généreusement sans contrepartie.'},
+  {n:18,ar:'الرَّزَّاق',tr:'Ar-Razzâq',fr:'Le Pourvoyeur',desc:'Pourvoit à tous les besoins.'},
+  {n:19,ar:'الْفَتَّاح',tr:'Al-Fattâh',fr:'Le Grand Ouvreur',desc:'Ouvre toutes les portes de la miséricorde.'},
+  {n:20,ar:'الْعَلِيم',tr:'Al-\'Alîm',fr:'L\'Omniscient',desc:'Connait absolument toute chose.'},
+  {n:21,ar:'الْقَابِض',tr:'Al-Qâbid',fr:'Le Restreignant',desc:'Retient et resserre selon Sa sagesse.'},
+  {n:22,ar:'الْبَاسِط',tr:'Al-Bâsit',fr:'L\'Expansif',desc:'Étend Sa grâce et Sa générosité.'},
+  {n:23,ar:'الْخَافِض',tr:'Al-Khâfid',fr:'L\'Abaisseur',desc:'Abaisse ce qui doit l\'être.'},
+  {n:24,ar:'الرَّافِع',tr:'Ar-Râfi\'',fr:'L\'Élévateur',desc:'Élève en dignité qui Il veut.'},
+  {n:25,ar:'الْمُعِزّ',tr:'Al-Mu\'izz',fr:'Le Glorificateur',desc:'Accorde honneur et gloire.'},
+  {n:26,ar:'الْمُذِلّ',tr:'Al-Mudhill',fr:'L\'Humiliateur',desc:'Abaisse ceux qui s\'opposent à Lui.'},
+  {n:27,ar:'السَّمِيع',tr:'As-Samî\'',fr:'Le Tout Entendant',desc:'Entend tout, même la pensée silencieuse.'},
+  {n:28,ar:'الْبَصِير',tr:'Al-Basîr',fr:'Le Clairvoyant',desc:'Voit tout, même ce qui est caché.'},
+  {n:29,ar:'الْحَكَم',tr:'Al-Hakam',fr:'L\'Arbitre',desc:'Juge entre les créatures.'},
+  {n:30,ar:'الْعَدْل',tr:'Al-\'Adl',fr:'Le Juste',desc:'Parfaitement équitable en tout.'},
+  {n:31,ar:'اللَّطِيف',tr:'Al-Latîf',fr:'Le Subtil',desc:'Bienveillant de façon subtile et invisible.'},
+  {n:32,ar:'الْخَبِير',tr:'Al-Khabîr',fr:'Le Bien Informé',desc:'Pleinement conscient de tout.'},
+  {n:33,ar:'الْحَلِيم',tr:'Al-Halîm',fr:'Le Doux',desc:'Clément, ne Se hâte pas de punir.'},
+  {n:34,ar:'الْعَظِيم',tr:'Al-\'Azîm',fr:'Le Très Grand',desc:'Grandeur incomparable.'},
+  {n:35,ar:'الْغَفُور',tr:'Al-Ghafûr',fr:'Le Pardonneur',desc:'Pardonne abondamment.'},
+  {n:36,ar:'الشَّكُور',tr:'Ash-Shakûr',fr:'Le Reconnaissant',desc:'Récompense même les plus petits actes.'},
+  {n:37,ar:'الْعَلِيّ',tr:'Al-\'Alî',fr:'Le Très Haut',desc:'Infiniment élevé au-dessus de tout.'},
+  {n:38,ar:'الْكَبِير',tr:'Al-Kabîr',fr:'Le Grand',desc:'Incomparablement grand.'},
+  {n:39,ar:'الْحَفِيظ',tr:'Al-Hafîz',fr:'Le Préservateur',desc:'Garde et protège tout.'},
+  {n:40,ar:'الْمُقِيت',tr:'Al-Muqît',fr:'Le Nourrisseur',desc:'Sustente et maintient tout en vie.'},
+  {n:41,ar:'الْحَسِيب',tr:'Al-Hasîb',fr:'Le Contrôleur',desc:'Suffit à tous les besoins, tient les comptes.'},
+  {n:42,ar:'الْجَلِيل',tr:'Al-Jalîl',fr:'Le Majestueux',desc:'Majesté et magnificence absolues.'},
+  {n:43,ar:'الْكَرِيم',tr:'Al-Karîm',fr:'Le Généreux',desc:'Générosité infinie et noble.'},
+  {n:44,ar:'الرَّقِيب',tr:'Ar-Raqîb',fr:'Le Vigilant',desc:'Surveille tout en permanence.'},
+  {n:45,ar:'الْمُجِيب',tr:'Al-Mujîb',fr:'Le Répondant',desc:'Répond à toutes les supplications.'},
+  {n:46,ar:'الْوَاسِع',tr:'Al-Wâsi\'',fr:'Le Vaste',desc:'Sa science et Sa miséricorde sont infinies.'},
+  {n:47,ar:'الْحَكِيم',tr:'Al-Hakîm',fr:'Le Sage',desc:'Sagesse parfaite en tout.'},
+  {n:48,ar:'الْوَدُود',tr:'Al-Wadûd',fr:'Le Tout Aimant',desc:'Amour parfait envers Ses serviteurs.'},
+  {n:49,ar:'الْمَجِيد',tr:'Al-Majîd',fr:'Le Glorieux',desc:'Gloire et noblesse absolues.'},
+  {n:50,ar:'الْبَاعِث',tr:'Al-Bâ\'ith',fr:'Le Ressuscitateur',desc:'Ressuscite les morts au Jour du Jugement.'},
+  {n:51,ar:'الشَّهِيد',tr:'Ash-Shahîd',fr:'Le Témoin',desc:'Témoin de tout, partout.'},
+  {n:52,ar:'الْحَقّ',tr:'Al-Haqq',fr:'La Vérité',desc:'La réalité absolue et immuable.'},
+  {n:53,ar:'الْوَكِيل',tr:'Al-Wakîl',fr:'Le Garant',desc:'Le meilleur à qui confier ses affaires.'},
+  {n:54,ar:'الْقَوِيّ',tr:'Al-Qawî',fr:'Le Très Fort',desc:'Force et puissance absolues.'},
+  {n:55,ar:'الْمَتِين',tr:'Al-Matîn',fr:'Le Ferme',desc:'Fermesse immuable.'},
+  {n:56,ar:'الْوَلِيّ',tr:'Al-Walî',fr:'L\'Allié',desc:'Protecteur et ami des croyants.'},
+  {n:57,ar:'الْحَمِيد',tr:'Al-Hamîd',fr:'Le Digne de Louange',desc:'Digne de toute louange en tout temps.'},
+  {n:58,ar:'الْمُحْصِي',tr:'Al-Muhsî',fr:'Le Dénombrateur',desc:'Dénombre et enregistre tout.'},
+  {n:59,ar:'الْمُبْدِئ',tr:'Al-Mubdi\'',fr:'Le Primordial',desc:'Crée pour la première fois sans modèle.'},
+  {n:60,ar:'الْمُعِيد',tr:'Al-Mu\'îd',fr:'Le Restaurateur',desc:'Renouvelle la création après la mort.'},
+  {n:61,ar:'الْمُحْيِي',tr:'Al-Muhyî',fr:'Le Vivificateur',desc:'Donne la vie.'},
+  {n:62,ar:'الْمُمِيت',tr:'Al-Mumît',fr:'Le Dominateur de la mort',desc:'Fait mourir selon Sa sagesse.'},
+  {n:63,ar:'الْحَيّ',tr:'Al-Hayy',fr:'Le Vivant',desc:'Vie éternelle et parfaite.'},
+  {n:64,ar:'الْقَيُّوم',tr:'Al-Qayyûm',fr:'Le Subsistant',desc:'Se suffit à Lui-même, tout dépend de Lui.'},
+  {n:65,ar:'الْوَاجِد',tr:'Al-Wâjid',fr:'Le Trouveur',desc:'Trouve tout ce qu\'Il désire.'},
+  {n:66,ar:'الْمَاجِد',tr:'Al-Mâjid',fr:'Le Noble',desc:'Noblesse et générosité infinies.'},
+  {n:67,ar:'الْوَاحِد',tr:'Al-Wâhid',fr:'L\'Unique',desc:'Un seul sans associé.'},
+  {n:68,ar:'الْأَحَد',tr:'Al-Ahad',fr:'L\'Un',desc:'Indivisible et absolument unique.'},
+  {n:69,ar:'الصَّمَد',tr:'As-Samad',fr:'L\'Éternel Absolu',desc:'Tout dépend de Lui, Il ne dépend de rien.'},
+  {n:70,ar:'الْقَادِر',tr:'Al-Qâdir',fr:'Le Tout Puissant',desc:'Pouvoir absolu sur toute chose.'},
+  {n:71,ar:'الْمُقْتَدِر',tr:'Al-Muqtadir',fr:'Le Dominateur',desc:'Puissance totale qui s\'impose.'},
+  {n:72,ar:'الْمُقَدِّم',tr:'Al-Muqaddim',fr:'L\'Avanceur',desc:'Met en avant ce qui doit l\'être.'},
+  {n:73,ar:'الْمُؤَخِّر',tr:'Al-Mu\'akhkhir',fr:'Le Retardateur',desc:'Reporte selon Sa sagesse.'},
+  {n:74,ar:'الْأَوَّل',tr:'Al-Awwal',fr:'Le Premier',desc:'Avant toute chose, sans commencement.'},
+  {n:75,ar:'الْآخِر',tr:'Al-Âkhir',fr:'Le Dernier',desc:'Après toute chose, sans fin.'},
+  {n:76,ar:'الظَّاهِر',tr:'Az-Zâhir',fr:'L\'Apparent',desc:'Manifeste par Ses signes.'},
+  {n:77,ar:'الْبَاطِن',tr:'Al-Bâtin',fr:'Le Caché',desc:'Caché à nos sens mais omniscient.'},
+  {n:78,ar:'الْوَالِي',tr:'Al-Wâlî',fr:'Le Gouverneur',desc:'Gouverne et administre tout.'},
+  {n:79,ar:'الْمُتَعَالِ',tr:'Al-Muta\'âlî',fr:'Le Très Exalté',desc:'Au-dessus de toute description.'},
+  {n:80,ar:'الْبَرّ',tr:'Al-Barr',fr:'Le Bienveillant',desc:'Source de toute bonté.'},
+  {n:81,ar:'التَّوَّاب',tr:'At-Tawwâb',fr:'Le Grand Repentant',desc:'Accepte le repentir encore et encore.'},
+  {n:82,ar:'الْمُنْتَقِم',tr:'Al-Muntaqim',fr:'Le Vengeur',desc:'Punit les injustes avec justice.'},
+  {n:83,ar:'الْعَفُوّ',tr:'Al-\'Afuww',fr:'Le Clément',desc:'Efface les péchés complètement.'},
+  {n:84,ar:'الرَّؤُوف',tr:'Ar-Ra\'ûf',fr:'Le Compatissant',desc:'Compassion tendre et profonde.'},
+  {n:85,ar:'مَالِكُ الْمُلْك',tr:'Mâlik ul-Mulk',fr:'Maître du Royaume',desc:'Propriétaire absolu de tout.'},
+  {n:86,ar:'ذُو الْجَلَالِ وَالْإِكْرَام',tr:'Dhul-Jalâli wal-Ikrâm',fr:'Seigneur de Majesté et de Générosité',desc:'Réunit toute majesté et toute générosité.'},
+  {n:87,ar:'الْمُقْسِط',tr:'Al-Muqsit',fr:'L\'Équitable',desc:'Parfaitement juste dans tous Ses jugements.'},
+  {n:88,ar:'الْجَامِع',tr:'Al-Jâmi\'',fr:'Le Rassembleur',desc:'Rassemble les créatures au Jour du Jugement.'},
+  {n:89,ar:'الْغَنِيّ',tr:'Al-Ghanî',fr:'Le Riche',desc:'Absolument indépendant de toute chose.'},
+  {n:90,ar:'الْمُغْنِي',tr:'Al-Mughnî',fr:'L\'Enrichissant',desc:'Rend riche qui Il veut.'},
+  {n:91,ar:'الْمَانِع',tr:'Al-Mâni\'',fr:'Le Défenseur',desc:'Protège en retenant ce qui nuit.'},
+  {n:92,ar:'الضَّارّ',tr:'Ad-Dârr',fr:'Le Nuisible',desc:'Crée ce qui cause le tort selon Sa sagesse.'},
+  {n:93,ar:'النَّافِع',tr:'An-Nâfi\'',fr:'Le Bienfaisant',desc:'Crée ce qui bénéficie selon Sa miséricorde.'},
+  {n:94,ar:'النُّور',tr:'An-Nûr',fr:'La Lumière',desc:'Lumière des cieux et de la terre.'},
+  {n:95,ar:'الْهَادِي',tr:'Al-Hâdî',fr:'Le Guide',desc:'Guide vers la vérité et le droit chemin.'},
+  {n:96,ar:'الْبَدِيع',tr:'Al-Badî\'',fr:'L\'Incomparable Initiateur',desc:'Crée de façon incomparable et originale.'},
+  {n:97,ar:'الْبَاقِي',tr:'Al-Bâqî',fr:'L\'Éternel',desc:'Dure éternellement sans fin.'},
+  {n:98,ar:'الْوَارِث',tr:'Al-Wârith',fr:'L\'Héritier Suprême',desc:'Hérite de tout après la fin du monde.'},
+  {n:99,ar:'الرَّشِيد',tr:'Ar-Rashîd',fr:'Le Recteur',desc:'Guide tout vers sa juste finalité.'},
+];
+
+function renderAsma(list){
+  const data = list || ASMA;
+  document.getElementById('asma-grid').innerHTML = data.map(a=>`
+    <div class="dcard" onclick="gtts('${a.ar}')">
+      <div style="font-size:11px;color:var(--mu);margin-bottom:4px;">${a.n} / 99</div>
+      <div class="dcar">${a.ar}</div>
+      <div class="dtr">${a.tr}</div>
+      <div class="dfr">${a.fr}</div>
+      <div style="font-size:11px;color:var(--mu);margin-top:5px;line-height:1.4;">${a.desc}</div>
+    </div>`).join('');
+}
+function filterAsma(q){
+  if(!q){renderAsma();return;}
+  const s=q.toLowerCase();
+  renderAsma(ASMA.filter(a=>a.fr.toLowerCase().includes(s)||a.tr.toLowerCase().includes(s)||a.ar.includes(q)));
+}
+
+// ═══════════════════════════════════════════
 // DICTIONARY
 // ═══════════════════════════════════════════
 
@@ -1526,6 +1685,7 @@ renderAlpha();
 renderHarakat();
 renderTajweed();
 renderSurahs();
+renderAsma();
 renderDict();
 initDSetup();
 updateXPBar();

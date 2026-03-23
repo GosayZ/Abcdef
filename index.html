@@ -799,37 +799,18 @@ function updateXPBar(){
 // Récitant : Husary (qualité, lent, clair pour apprendre)
 const RECITER = 'Husary_128kbps';
 
-// URLs audio des lettres depuis Islamic Network
-const LETTER_AUDIO = {
-  'ا':'https://www.islamicfinder.org/audio/alphabet/01-Alef.mp3',
-  'ب':'https://www.islamicfinder.org/audio/alphabet/02-Ba.mp3',
-  'ت':'https://www.islamicfinder.org/audio/alphabet/03-Ta.mp3',
-  'ث':'https://www.islamicfinder.org/audio/alphabet/04-Tha.mp3',
-  'ج':'https://www.islamicfinder.org/audio/alphabet/05-Jeem.mp3',
-  'ح':'https://www.islamicfinder.org/audio/alphabet/06-Ha.mp3',
-  'خ':'https://www.islamicfinder.org/audio/alphabet/07-Kha.mp3',
-  'د':'https://www.islamicfinder.org/audio/alphabet/08-Dal.mp3',
-  'ذ':'https://www.islamicfinder.org/audio/alphabet/09-Dhal.mp3',
-  'ر':'https://www.islamicfinder.org/audio/alphabet/10-Ra.mp3',
-  'ز':'https://www.islamicfinder.org/audio/alphabet/11-Zain.mp3',
-  'س':'https://www.islamicfinder.org/audio/alphabet/12-Seen.mp3',
-  'ش':'https://www.islamicfinder.org/audio/alphabet/13-Sheen.mp3',
-  'ص':'https://www.islamicfinder.org/audio/alphabet/14-Sad.mp3',
-  'ض':'https://www.islamicfinder.org/audio/alphabet/15-Dad.mp3',
-  'ط':'https://www.islamicfinder.org/audio/alphabet/16-Ta2.mp3',
-  'ظ':'https://www.islamicfinder.org/audio/alphabet/17-Dha.mp3',
-  'ع':'https://www.islamicfinder.org/audio/alphabet/18-Ain.mp3',
-  'غ':'https://www.islamicfinder.org/audio/alphabet/19-Ghain.mp3',
-  'ف':'https://www.islamicfinder.org/audio/alphabet/20-Fa.mp3',
-  'ق':'https://www.islamicfinder.org/audio/alphabet/21-Qaf.mp3',
-  'ك':'https://www.islamicfinder.org/audio/alphabet/22-Kaf.mp3',
-  'ل':'https://www.islamicfinder.org/audio/alphabet/23-Lam.mp3',
-  'م':'https://www.islamicfinder.org/audio/alphabet/24-Meem.mp3',
-  'ن':'https://www.islamicfinder.org/audio/alphabet/25-Noon.mp3',
-  'ه':'https://www.islamicfinder.org/audio/alphabet/26-Ha2.mp3',
-  'و':'https://www.islamicfinder.org/audio/alphabet/27-Waw.mp3',
-  'ي':'https://www.islamicfinder.org/audio/alphabet/28-Ya.mp3',
-  'ء':'https://www.islamicfinder.org/audio/alphabet/01-Alef.mp3',
+// Audio lettres : on utilise les noms des lettres lus dans Al-Baqara (versets d'ouverture الم)
+// via EveryAyah — chaque lettre isolée existe dans les huruf muqatta'at.
+// Pour les lettres simples, on utilise speakFallback (Web Speech ar-SA) qui
+// prononce correctement le NOM de la lettre (بَاء، تَاء...) pas juste le son.
+// C'est la méthode la plus fiable sans CORS.
+const LETTER_NAMES = {
+  'ا':'أَلِف','ب':'بَاء','ت':'تَاء','ث':'ثَاء','ج':'جِيم',
+  'ح':'حَاء','خ':'خَاء','د':'دَال','ذ':'ذَال','ر':'رَاء',
+  'ز':'زَاي','س':'سِين','ش':'شِين','ص':'صَاد','ض':'ضَاد',
+  'ط':'طَاء','ظ':'ظَاء','ع':'عَيْن','غ':'غَيْن','ف':'فَاء',
+  'ق':'قَاف','ك':'كَاف','ل':'لَام','م':'مِيم','ن':'نُون',
+  'ه':'هَاء','و':'وَاو','ي':'يَاء','ء':'هَمْزَة',
 };
 
 // Construit l'URL EveryAyah pour un verset
@@ -854,26 +835,19 @@ function playMp3(url, onEnded, onError){
   return a;
 }
 
-// Joue une lettre
+// Joue une lettre par son NOM complet (بَاء pas juste ب)
 function playLetter(ar){
   if(!audioUnlocked){ showAudioBanner(); return; }
-  const url = LETTER_AUDIO[ar];
-  if(url){
-    playMp3(url, null, ()=>speakFallback(ar));
-  } else {
-    speakFallback(ar);
-  }
+  const name = LETTER_NAMES[ar] || ar;
+  speakFallback(name);
 }
 
-// Ancien alias utilisé partout (lettres, dictionnaire, harakat)
+// Alias général (harakat, dictionnaire, versets au clic)
 function gtts(text){
   if(!audioUnlocked){ showAudioBanner(); return; }
-  // Si c'est une lettre connue, utilise le vrai MP3
-  if(LETTER_AUDIO[text]){
-    playMp3(LETTER_AUDIO[text], null, ()=>speakFallback(text));
-  } else {
-    speakFallback(text);
-  }
+  // Si c'est une lettre isolée, joue son nom complet
+  const name = LETTER_NAMES[text];
+  speakFallback(name || text);
 }
 
 // Fallback Web Speech (si MP3 bloqué)
@@ -893,6 +867,7 @@ function stopAll(){
   if(currentAudio){ currentAudio.pause(); currentAudio=null; }
   if(window.speechSynthesis) speechSynthesis.cancel();
   surahPlaying=false; plPlaying=false;
+  ayahLoopActive=false; ayahLoopNum=0;
   document.querySelectorAll('.playing-info').forEach(el=>el.textContent='');
   const pi=document.getElementById('pl-info');
   if(pi) pi.textContent='';
@@ -1047,9 +1022,14 @@ function renderSurahs(){
           <div class="ayah">
             <div class="anum">${a.n}</div>
             <div class="acontent">
-              <div class="aar" onclick="gtts(this.dataset.ar)" data-ar="${a.ar.replace(/"/g,'&quot;')}">${a.ar} <span style="color:var(--gold);font-size:16px;">﴿${a.n}﴾</span></div>
+              <div class="aar">${a.ar} <span style="color:var(--gold);font-size:16px;">﴿${a.n}﴾</span></div>
               <div class="atr">${a.tr}</div>
               <div class="afr">${a.fr}</div>
+              <div style="display:flex;gap:6px;margin-top:6px;">
+                <button style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;" onclick="playAyah(${s.num},${a.n},false)">▶ Écouter</button>
+                <button style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;" id="loopv-${s.num}-${a.n}" onclick="playAyah(${s.num},${a.n},true)">🔁 Boucle</button>
+                <button style="background:rgba(200,80,80,.08);border:1px solid rgba(200,80,80,.2);color:var(--red);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;" onclick="stopAll()">⏹</button>
+              </div>
             </div>
           </div>`).join('')}
         <div class="sc-audioctrl">
@@ -1064,6 +1044,47 @@ function renderSurahs(){
       </div>
     </div>`;
   }).join('') || '<div style="text-align:center;padding:30px;color:var(--mu);">Aucune sourate dans cette catégorie.</div>';
+}
+
+let ayahLoopActive = false;
+let ayahLoopNum = 0;
+let ayahLoopN = 0;
+
+function playAyah(surahNum, ayahN, loop){
+  stopAll();
+  ayahLoopActive = loop;
+  ayahLoopNum = surahNum;
+  ayahLoopN = ayahN;
+  if(loop){
+    const btn = document.getElementById('loopv-'+surahNum+'-'+ayahN);
+    if(btn) btn.style.background = 'rgba(201,168,76,.3)';
+  }
+  loopAyahStep();
+}
+
+function loopAyahStep(){
+  if(!ayahLoopActive && ayahLoopNum) {
+    // lecture unique
+    const url = everyAyahUrl(ayahLoopNum, ayahLoopN);
+    playMp3(url, null, ()=>{
+      const s = SURAHS.find(x=>x.num===ayahLoopNum);
+      const a = s?.ayat.find(x=>x.n===ayahLoopN);
+      if(a) speakFallback(a.ar);
+    });
+    ayahLoopNum = 0;
+    return;
+  }
+  if(!ayahLoopActive) return;
+  const url = everyAyahUrl(ayahLoopNum, ayahLoopN);
+  playMp3(url,
+    ()=>{ setTimeout(loopAyahStep, 600); },
+    ()=>{
+      const s = SURAHS.find(x=>x.num===ayahLoopNum);
+      const a = s?.ayat.find(x=>x.n===ayahLoopN);
+      if(a) speakFallbackWithCb(a.ar, ()=>setTimeout(loopAyahStep,600));
+      else ayahLoopActive=false;
+    }
+  );
 }
 
 function toggleSurah(num){

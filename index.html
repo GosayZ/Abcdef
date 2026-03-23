@@ -623,33 +623,103 @@ function showXPToast(msg){
 }
 
 // ══════════════════════════════════════════════════
-// AUDIO
+// AUDIO — Compatible Opera GX + Android + iOS + PC
 // ══════════════════════════════════════════════════
 
-let currentAudio=null;
-function playAudio(url, btn){
-  if(currentAudio){currentAudio.pause();currentAudio=null;}
-  document.querySelectorAll('.l-audio.playing').forEach(b=>b.classList.remove('playing'));
-  if(!url){useFallback(btn&&btn.dataset&&btn.dataset.ar||'');return;}
-  const a=new Audio();
-  a.crossOrigin='anonymous';
-  a.src=url;
-  currentAudio=a;
-  if(btn) btn.classList.add('playing');
-  a.play().catch(()=>{ if(btn) btn.classList.remove('playing'); });
-  a.onended=()=>{ if(btn) btn.classList.remove('playing'); currentAudio=null; };
-  a.onerror=()=>{ if(btn) btn.classList.remove('playing'); currentAudio=null; useFallback(btn&&btn.dataset&&btn.dataset.ar||''); };
+let ttsUnlocked = false;
+let ttsVoice = null;
+let ttsVoicesLoaded = false;
+
+function loadVoices() {
+  if (!window.speechSynthesis) return;
+  const voices = speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    ttsVoicesLoaded = true;
+    ttsVoice = voices.find(v => v.lang === 'ar-SA')
+            || voices.find(v => v.lang === 'ar-EG')
+            || voices.find(v => v.lang === 'ar-XA')
+            || voices.find(v => v.lang.startsWith('ar'))
+            || null;
+  }
 }
-function useFallback(text){
-  if(!text||!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);
-  u.lang='ar-SA'; u.rate=0.7; u.pitch=1;
-  const v=window.speechSynthesis.getVoices().find(x=>x.lang.startsWith('ar'));
-  if(v) u.voice=v;
-  window.speechSynthesis.speak(u);
+
+if (window.speechSynthesis) {
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
 }
-if(window.speechSynthesis){ window.speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices(); }
+
+// speak() — ne joue QUE si appelé depuis un vrai clic utilisateur
+function speak(text) {
+  if (!text || !window.speechSynthesis) return;
+  if (!ttsUnlocked) {
+    // Montrer le bandeau si pas encore déverrouillé
+    showSoundBanner();
+    return;
+  }
+  // Recharger les voix si pas encore fait
+  if (!ttsVoicesLoaded) loadVoices();
+  speechSynthesis.cancel();
+  // Délai court nécessaire sur Android/Opera après cancel()
+  setTimeout(() => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ar-SA';
+    u.rate = 0.72;
+    u.pitch = 1.0;
+    u.volume = 1.0;
+    if (ttsVoice) u.voice = ttsVoice;
+    speechSynthesis.speak(u);
+  }, 80);
+}
+
+// Alias pour compatibilité avec l'ancien code
+// playAudio est appelé avec (url, btn) — on ignore l'url, on lit btn.dataset.ar
+function playAudio(url, btn) {
+  const text = (btn && btn.dataset && btn.dataset.ar) ? btn.dataset.ar : '';
+  if (text) speak(text);
+}
+function useFallback(text) { speak(text); }
+
+// Bandeau "Activer le son" — nécessaire sur tous les navigateurs mobiles
+function showSoundBanner() {
+  if (document.getElementById('sb')) return;
+  const b = document.createElement('div');
+  b.id = 'sb';
+  b.style.cssText = [
+    'position:fixed','top:0','left:0','right:0','z-index:9999',
+    'background:linear-gradient(135deg,#8B6914,#C9A84C)',
+    'color:#1A1000','text-align:center','padding:16px',
+    'font-weight:700','font-size:15px','cursor:pointer',
+    'box-shadow:0 4px 20px rgba(0,0,0,.5)',
+    'font-family:Inter,sans-serif','letter-spacing:.3px',
+  ].join(';');
+  b.innerHTML = '🔊 Appuie ici pour activer le son';
+  b.addEventListener('click', () => {
+    ttsUnlocked = true;
+    b.remove();
+    // Test immédiat pour confirmer que ça marche
+    if (window.speechSynthesis) {
+      speechSynthesis.cancel();
+      const test = new SpeechSynthesisUtterance('');
+      test.volume = 0;
+      speechSynthesis.speak(test);
+    }
+  });
+  document.body.prepend(b);
+}
+
+// Sur PC/Opera GX, le son marche dès le premier clic sur n'importe quoi
+// On déverrouille silencieusement au premier clic si le bandeau est fermé
+document.addEventListener('click', function onFirstClick() {
+  if (!ttsUnlocked) {
+    ttsUnlocked = true;
+    const b = document.getElementById('sb');
+    if (b) b.remove();
+  }
+  document.removeEventListener('click', onFirstClick);
+});
+
+// Afficher le bandeau au chargement
+window.addEventListener('load', showSoundBanner);
 
 // ══════════════════════════════════════════════════
 // NAVIGATION
@@ -692,7 +762,7 @@ function renderAlpha(){
       <div class="l-ar">${l.ar}</div>
       <div class="l-name">${l.name}</div>
       <div class="l-ph">${l.ph}</div>
-      <button class="l-audio" data-ar="${l.ar}" onclick="event.stopPropagation();playAudio('${l.audio}',this)">🔊 Écouter</button>
+      <button class="l-audio" onclick="event.stopPropagation();speak('${l.ar}')">🔊 Écouter</button>
     </div>`;
   }).join('');
 }
@@ -714,9 +784,10 @@ function showLetterDetail(idx){
   const d=document.getElementById('ldetail');
   d.classList.add('on');
   d.scrollIntoView({behavior:'smooth',block:'nearest'});
-  setTimeout(()=>playAudio(l.audio),400);
+  // Pas d'auto-play : le clic sur la carte a déjà consommé le geste utilisateur
+  // L'utilisateur peut cliquer sur le bouton 🔊 Écouter
 }
-function playLetterAudio(){ playAudio(LETTERS[curLetterIdx].audio); }
+function playLetterAudio(){ speak(LETTERS[curLetterIdx].ar); }
 function markMastered(){
   const ar=LETTERS[curLetterIdx].ar;
   state.mastered[ar]=true; delete state.review[ar];
@@ -809,13 +880,14 @@ function readNextAyah(s){
   if(surahReadIdx>=s.ayat.length) return;
   const a=s.ayat[surahReadIdx];
   if(!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(a.ar);
-  u.lang='ar-SA'; u.rate=0.65; u.pitch=1;
-  const v=window.speechSynthesis.getVoices().find(x=>x.lang.startsWith('ar'));
-  if(v) u.voice=v;
-  u.onend=()=>{ surahReadIdx++; setTimeout(()=>readNextAyah(s),500); };
-  window.speechSynthesis.speak(u);
+  speechSynthesis.cancel();
+  setTimeout(()=>{
+    const u=new SpeechSynthesisUtterance(a.ar);
+    u.lang='ar-SA'; u.rate=0.65; u.pitch=1; u.volume=1;
+    if(ttsVoice) u.voice=ttsVoice;
+    u.onend=()=>{ surahReadIdx++; setTimeout(()=>readNextAyah(s),600); };
+    speechSynthesis.speak(u);
+  },80);
 }
 
 // ══════════════════════════════════════════════════
@@ -868,10 +940,10 @@ function nextQ(){
   ).join('');
   const pct=qTotal>0?(qCorrect/qTotal)*100:0;
   document.getElementById('qprog').style.width=Math.min(pct,100)+'%';
-  setTimeout(()=>{ if(curQ.audio) playAudio(curQ.audio); else useFallback(curQ.sym); },300);
+  // Pas d'auto-play — l'utilisateur clique sur 🔊 dans la carte
 }
 
-function playQuizAudio(){ if(curQ){ if(curQ.audio) playAudio(curQ.audio); else useFallback(curQ.sym); }}
+function playQuizAudio(){ if(curQ) speak(curQ.sym); }
 
 function answerQ(ans){
   if(qAnswered) return;
@@ -1017,10 +1089,10 @@ function loadDStep(){
   document.getElementById('d-prog').style.width=(dIdx/tot*100)+'%';
   document.getElementById('d-next-btn').textContent=dIdx>=tot-1?'Voir les résultats 🏆':'Lettre suivante ⟶';
   clearCanvas();
-  setTimeout(()=>playAudio(s.letter.audio),300);
+  // Pas d'auto-play : utilise le bouton 🔊 dans les outils
 }
 
-function playDessinAudio(){ if(dQueue[dIdx]) playAudio(dQueue[dIdx].letter.audio); }
+function playDessinAudio(){ if(dQueue[dIdx]) speak(dQueue[dIdx].letter.ar); }
 function nextDessinStep(){ dIdx++; loadDStep(); }
 function showDResults(){
   document.getElementById('d-game').style.display='none';

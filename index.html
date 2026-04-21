@@ -358,8 +358,8 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
   .theme-grid{grid-template-columns:repeat(2,1fr);}
   .settings-card{padding:16px;}
 }
-/* ── Récitants ── */
-.reciter-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:2px;}
+/* ── Récitants (settings) ── */
+.reciter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:2px;}
 .rchip{background:var(--panel2);border:1.5px solid var(--bd);color:var(--tx);padding:10px 8px;border-radius:10px;cursor:pointer;font-size:11px;text-align:center;line-height:1.4;transition:all .2s;}
 .rchip:hover,.rchip.active{border-color:var(--gold);color:var(--gold);}
 .rchip.active{background:rgba(201,168,76,.12);box-shadow:0 0 0 2px rgba(201,168,76,.18);}
@@ -377,6 +377,16 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 .surah-loading{text-align:center;padding:32px 0;color:var(--mu);font-size:13px;}
 .spin{display:inline-block;width:28px;height:28px;border:3px solid var(--bd2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* ── Barre récitants (onglet Sourates) ── */
+.reciter-bar{display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none;}
+.reciter-bar::-webkit-scrollbar{display:none;}
+.rbtn{background:var(--panel2);border:1.5px solid var(--bd);color:var(--mu);padding:5px 12px;border-radius:20px;cursor:pointer;font-size:11px;white-space:nowrap;flex-shrink:0;transition:all .2s;}
+.rbtn.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.12);}
+/* ── Status verset ── */
+.ayah-status-row{display:flex;gap:6px;margin-top:6px;}
+.ayah-sbtn{background:transparent;border:1px solid var(--bd);color:var(--mu);border-radius:20px;padding:2px 9px;font-size:10px;cursor:pointer;transition:all .15s;}
+.ayah-sbtn.active[data-s=learning]{border-color:#3daa7a;color:#3daa7a;background:rgba(61,170,122,.12);}
+.ayah-sbtn.active[data-s=done]{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.12);}
 @media(max-width:480px){.reciter-grid{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
@@ -598,6 +608,7 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 <div class="sec" id="sec-surahs">
   <div class="stitle">القرآن الكريم</div>
   <div class="ssub">114 sourates · ⭐ favori · 🎵 playlist</div>
+  <div class="reciter-bar" id="reciter-bar-surahs"></div>
   <input class="surah-search" id="surah-search" placeholder="🔍 Chercher une sourate..." oninput="renderSurahs()">
   <div class="surah-tabs" id="surah-tabs">
     <button class="stab active" onclick="filterSurahs('all',this)">Toutes</button>
@@ -1201,6 +1212,7 @@ if(!ST.playlist)ST.playlist=[];
 if(!ST.activity)ST.activity={};
 if(ST.uiSound===undefined)ST.uiSound=true;
 if(!ST.reciter)ST.reciter='Alafasy_128kbps';
+if(!ST.ayahStatus)ST.ayahStatus={};
 
 function save(){localStorage.setItem('nourST',JSON.stringify(ST));}
 
@@ -1254,6 +1266,13 @@ const RECITERS = [
   {id:'Alafasy_128kbps',              name:'Mishary Alafasy',        nameAr:'مشاري العفاسي',        flag:'🇰🇼'},
   {id:'Husary_128kbps',               name:'Mahmoud Husary',         nameAr:'محمود الحصري',         flag:'🇪🇬'},
   {id:'Abdul_Basit_Murattal_192kbps', name:'Abdul Basit Murattal',   nameAr:'عبد الباسط عبد الصمد', flag:'🇪🇬'},
+  {id:'Minshawi_128kbps',             name:'Mohamed Minshawi',       nameAr:'محمد المنشاوي',         flag:'🇪🇬'},
+  {id:'Maher_Al_Muaiqly_128kbps',     name:'Maher Al-Muaiqly',       nameAr:'ماهر المعيقلي',         flag:'🇸🇦'},
+  {id:'Muhammad_Jibreel_128kbps',     name:'Muhammad Jibreel',       nameAr:'محمد جبريل',            flag:'🇸🇦'},
+  {id:'Saad_Al_Ghamdi_48kbps',        name:'Saad Al-Ghamdi',         nameAr:'سعد الغامدي',           flag:'🇸🇦'},
+  {id:'Abu_Bakr_Al_Shatri_128kbps',   name:'Abu Bakr Al-Shatri',     nameAr:'أبو بكر الشاطري',       flag:'🇸🇦'},
+  {id:'Hani_Rifai_192kbps',           name:'Hani Rifai',             nameAr:'هاني الرفاعي',          flag:'🇸🇦'},
+  {id:'Nasser_Alqatami_128kbps',      name:'Nasser Al-Qatami',       nameAr:'ناصر القطامي',          flag:'🇰🇼'},
 ];
 
 // Audio lettres — fichiers locaux dans audio/letters/
@@ -1425,6 +1444,36 @@ function stopAll(){
   document.querySelectorAll('.playing-info').forEach(el=>el.textContent='');
   const pi=document.getElementById('pl-info');
   if(pi) pi.textContent='';
+  try{ if('mediaSession' in navigator) navigator.mediaSession.playbackState='none'; }catch(e){}
+}
+
+// ── MediaSession API : contrôles sur écran verrouillé ──
+function updateMediaSession(surahNum, ayahN){
+  if(!('mediaSession' in navigator)) return;
+  try {
+    const meta=SURAH_META.find(x=>x.num===surahNum);
+    const rec=RECITERS.find(r=>r.id===ST.reciter);
+    navigator.mediaSession.metadata=new MediaMetadata({
+      title: (meta?meta.fr+' — Verset '+ayahN:'Verset '+ayahN),
+      artist: rec?rec.name:(ST.reciter||'Récitant'),
+      album: 'نور الحروف — القرآن الكريم',
+    });
+    navigator.mediaSession.playbackState='playing';
+  } catch(e){}
+}
+function setupMediaSession(){
+  if(!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.setActionHandler('pause', stopAll);
+    navigator.mediaSession.setActionHandler('stop', stopAll);
+    navigator.mediaSession.setActionHandler('nexttrack', ()=>{
+      if(surahPlaying){ surahAyahIdx++; playNextAyah(); }
+      else if(plPlaying){ surahAyahIdx=999; }
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', ()=>{
+      if(surahPlaying){ surahAyahIdx=Math.max(0,surahAyahIdx-2); playNextAyah(); }
+    });
+  } catch(e){}
 }
 
 function showAudioBanner(){
@@ -1516,6 +1565,7 @@ function showSec(id){
   if(id==='prog') renderProg();
   if(id==='playlist') renderPlaylist();
   if(id==='badges') renderBadges();
+  if(id==='surahs') renderReciterBar();
 }
 
 function toggleGroup(id){
@@ -1600,8 +1650,15 @@ function renderReciterGrid(){
       <span class="rchip-sub">${r.nameAr}</span>
     </button>`).join('');
 }
+function renderReciterBar(){
+  const bar=document.getElementById('reciter-bar-surahs');
+  if(!bar) return;
+  bar.innerHTML=RECITERS.map(r=>
+    `<button class="rbtn${ST.reciter===r.id?' active':''}" onclick="setReciter('${r.id}')">${r.flag} ${r.name}</button>`
+  ).join('');
+}
 function setReciter(id){
-  ST.reciter = id; save(); renderReciterGrid();
+  ST.reciter=id; save(); renderReciterGrid(); renderReciterBar();
 }
 
 function resetSettings(){
@@ -1737,7 +1794,7 @@ function renderSurahs(){
         <div class="sc-info">
           <div class="sc-ar">${s.ar}</div>
           <div class="sc-fr">${s.fr} <span class="sc-type ${typeCls}">${s.type}</span></div>
-          <div class="sc-meta">${s.count} versets${isFav?' · ⭐':''}</div>
+          <div class="sc-meta">${s.count} versets<span id="ayah-prog-${s.num}">${getAyahProgText(s.num)}</span>${isFav?' · ⭐':''}</div>
         </div>
         <div class="sc-actions" onclick="event.stopPropagation()">
           <button class="sc-favbtn" onclick="toggleFav(${s.num})" title="Favori">${isFav?'⭐':'☆'}</button>
@@ -1801,11 +1858,11 @@ function loopAyahStep(){
   if(!ayahLoopActive) return;
   const url = everyAyahUrl(ayahLoopNum, ayahLoopN);
   playMp3(url,
-    ()=>{ setTimeout(loopAyahStep, 600); },
+    ()=>{ setTimeout(loopAyahStep, 100); },
     ()=>{
       const ayat = _surahCache[ayahLoopNum]||[];
       const a = ayat.find(x=>x.n===ayahLoopN);
-      if(a) speakFallbackWithCb(a.ar, ()=>setTimeout(loopAyahStep,600));
+      if(a) speakFallbackWithCb(a.ar, ()=>setTimeout(loopAyahStep,100));
       else ayahLoopActive=false;
     }
   );
@@ -1840,6 +1897,10 @@ async function openSurah(num){
             <button style="background:rgba(200,80,80,.08);border:1px solid rgba(200,80,80,.2);color:var(--red);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;" onclick="stopAll()">⏹</button>
             ${a.tafsir ? `<button style="background:rgba(201,168,76,.05);border:1px solid var(--bd);color:var(--gold);border-radius:20px;padding:3px 10px;font-size:10px;cursor:pointer;" onclick="event.stopPropagation();toggleTafsir(${num},${a.n})">Tafsir</button>` : ''}
           </div>
+          <div class="ayah-status-row" id="arow-${num}-${a.n}">
+            <button class="ayah-sbtn${(ST.ayahStatus[num+'-'+a.n]==='learning')?' active':''}" data-s="learning" onclick="event.stopPropagation();setAyahStatus(${num},${a.n},'learning')">📖 En cours</button>
+            <button class="ayah-sbtn${(ST.ayahStatus[num+'-'+a.n]==='done')?' active':''}" data-s="done" onclick="event.stopPropagation();setAyahStatus(${num},${a.n},'done')">✓ Mémorisé</button>
+          </div>
           ${a.tafsir ? `<div class="atafsir" id="tafsir-${num}-${a.n}" style="display:none;margin-top:8px;padding:8px 0 2px;border-top:1px dashed var(--bd);font-size:12px;color:var(--mu);line-height:1.6;animation:fu .2s ease;"><strong style="color:var(--gold);">Tafsir :</strong> <em>${a.tafsir}</em></div>` : ''}
         </div>
       </div>`).join('');
@@ -1858,6 +1919,33 @@ function setSurahStatus(num,status){
   ST.surahStatus[num]=ST.surahStatus[num]===status?'':status;
   save(); renderSurahs();
   if(status==='done')addXP(10);
+}
+function setAyahStatus(snum,n,status){
+  const k=snum+'-'+n;
+  const prev=ST.ayahStatus[k];
+  ST.ayahStatus[k]=prev===status?'':status;
+  save();
+  // Mise à jour visuelle directe (sans re-render complet)
+  const row=document.getElementById('arow-'+snum+'-'+n);
+  if(row){
+    row.querySelectorAll('.ayah-sbtn').forEach(b=>b.classList.remove('active'));
+    if(ST.ayahStatus[k]) row.querySelector('.ayah-sbtn[data-s="'+status+'"]')?.classList.add('active');
+  }
+  // Mettre à jour le compteur dans la carte
+  const prog=document.getElementById('ayah-prog-'+snum);
+  if(prog) prog.textContent=getAyahProgText(snum);
+  if(status==='done'&&ST.ayahStatus[k]==='done') addXP(2);
+}
+function getAyahProgText(snum){
+  const prefix=snum+'-';
+  const vals=Object.keys(ST.ayahStatus||{}).filter(k=>k.startsWith(prefix));
+  const done=vals.filter(k=>ST.ayahStatus[k]==='done').length;
+  const learning=vals.filter(k=>ST.ayahStatus[k]==='learning').length;
+  if(!done&&!learning) return '';
+  const parts=[];
+  if(done) parts.push('✓'+done);
+  if(learning) parts.push('📖'+learning);
+  return ' · '+parts.join(' ');
 }
 function togglePL(num){
   const i=ST.playlist.indexOf(num);
@@ -1889,18 +1977,19 @@ function playNextAyah(){
   if(!surahPlaying) return;
   const ayat = _surahCache[surahNumPlaying]||[];
   if(surahAyahIdx>=ayat.length){
-    if(surahLoopMode){ surahAyahIdx=0; setTimeout(playNextAyah,800); }
+    if(surahLoopMode){ surahAyahIdx=0; setTimeout(playNextAyah,300); }
     else{ surahPlaying=false; const el=document.getElementById('pinfo-'+surahNumPlaying); if(el)el.textContent=''; }
     return;
   }
   const a=ayat[surahAyahIdx];
   const el=document.getElementById('pinfo-'+surahNumPlaying);
   if(el) el.textContent='▶ Verset '+a.n;
+  updateMediaSession(surahNumPlaying, a.n);
   const url=everyAyahUrl(surahNumPlaying, a.n);
   playMp3(url,
-    ()=>{ if(surahPlaying){ surahAyahIdx++; setTimeout(playNextAyah,400); }},
+    ()=>{ if(surahPlaying){ surahAyahIdx++; setTimeout(playNextAyah,50); }},
     ()=>{
-      speakFallbackWithCb(a.ar, ()=>{ if(surahPlaying){ surahAyahIdx++; setTimeout(playNextAyah,600); }});
+      speakFallbackWithCb(a.ar, ()=>{ if(surahPlaying){ surahAyahIdx++; setTimeout(playNextAyah,100); }});
     }
   );
 }
@@ -1955,14 +2044,15 @@ function playNextAyahPL(num){
   if(!plPlaying) return;
   const s=SURAH_META.find(x=>x.num===num);
   const ayat=_surahCache[num]||[];
-  if(surahAyahIdx>=ayat.length){ plIdx++; surahPlaying=false; setTimeout(playPLItem,600); return; }
+  if(surahAyahIdx>=ayat.length){ plIdx++; surahPlaying=false; setTimeout(playPLItem,200); return; }
   const a=ayat[surahAyahIdx];
   const pi=document.getElementById('pl-info');
   if(pi) pi.textContent='▶ '+(s?s.fr:num)+' — Verset '+a.n;
+  updateMediaSession(num, a.n);
   const url=everyAyahUrl(num, a.n);
   playMp3(url,
-    ()=>{ surahAyahIdx++; setTimeout(()=>playNextAyahPL(num),400); },
-    ()=>{ speakFallbackWithCb(a.ar, ()=>{ surahAyahIdx++; setTimeout(()=>playNextAyahPL(num),600); }); }
+    ()=>{ surahAyahIdx++; setTimeout(()=>playNextAyahPL(num),50); },
+    ()=>{ speakFallbackWithCb(a.ar, ()=>{ surahAyahIdx++; setTimeout(()=>playNextAyahPL(num),100); }); }
   );
 }
 
@@ -2548,6 +2638,7 @@ renderAlpha();
 renderHarakat();
 renderTajweed();
 renderSurahs();
+renderReciterBar();
 renderAsma();
 renderDict();
 renderDuas();
@@ -2555,6 +2646,7 @@ initDSetup();
 updateXPBar();
 checkStreak();
 renderHome();
+setupMediaSession();
 
 </script>
 </body>

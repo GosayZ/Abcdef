@@ -322,7 +322,7 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 .home-hello{font-size:clamp(15px,3.5vw,19px);font-weight:600;color:var(--tx);margin-bottom:4px;}
 .home-name{color:var(--gold-l);}
 .home-date{font-size:12px;color:var(--mu);margin-bottom:18px;letter-spacing:.5px;}
-.home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.home-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
 .home-stat{background:rgba(201,168,76,.08);border:1px solid var(--bd);border-radius:12px;padding:10px 8px;text-align:center;}
 .home-stat-n{font-size:22px;font-weight:700;color:var(--gold);line-height:1;}
 .home-stat-l{font-size:10px;color:var(--mu);margin-top:4px;text-transform:uppercase;letter-spacing:1px;}
@@ -379,7 +379,7 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
   .settings-card{padding:16px;}
 }
 /* ── Récitants (settings) ── */
-.reciter-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:2px;}
+.reciter-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:2px;}
 .rchip{background:var(--panel2);border:1.5px solid var(--bd);color:var(--tx);padding:10px 8px;border-radius:10px;cursor:pointer;font-size:11px;text-align:center;line-height:1.4;transition:all .2s;}
 .rchip:hover,.rchip.active{border-color:var(--gold);color:var(--gold);}
 .rchip.active{background:rgba(201,168,76,.12);box-shadow:0 0 0 2px rgba(201,168,76,.18);}
@@ -412,6 +412,10 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 .rbtn-sub{font-size:9px;color:var(--mu);display:block;margin-top:1px;}
 /* ── Bouton play dans l'entête de carte ── */
 .sc-playbtn{color:var(--gold)!important;border-color:rgba(201,168,76,.3)!important;font-size:13px!important;}
+/* ── Barre progression mémorisation sourate ── */
+.sc-progbar{height:3px;background:rgba(201,168,76,.1);border-radius:2px;margin-top:5px;display:flex;overflow:hidden;}
+.sc-progbar-done{height:100%;background:var(--gold);border-radius:2px;transition:width .4s;}
+.sc-progbar-learn{height:100%;background:#3daa7a;border-radius:2px;transition:width .4s;}
 /* ── Status verset ── */
 .ayah-status-row{display:flex;gap:6px;margin-top:6px;}
 .ayah-sbtn{background:transparent;border:1px solid var(--bd);color:var(--mu);border-radius:20px;padding:2px 9px;font-size:10px;cursor:pointer;transition:all .15s;}
@@ -565,6 +569,7 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
       <div class="home-stat"><div class="home-stat-n" id="home-streak">0</div><div class="home-stat-l">🔥 Streak</div></div>
       <div class="home-stat"><div class="home-stat-n" id="home-xp">0</div><div class="home-stat-l">✨ XP</div></div>
       <div class="home-stat"><div class="home-stat-n" id="home-letters">0</div><div class="home-stat-l">🔤 Lettres</div></div>
+      <div class="home-stat"><div class="home-stat-n" id="home-ayahs">0</div><div class="home-stat-l">📖 Versets</div></div>
     </div>
   </div>
 
@@ -796,6 +801,15 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
   <div class="divider"><span>❋</span></div>
   <div style="font-size:12px;color:var(--mu);margin-bottom:12px;">🟢 Maîtrisée · 🟡 À revoir · ⚪ Non vue</div>
   <div class="lprow" id="lprow"></div>
+
+  <div class="divider"><span>❋</span></div>
+  <div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:14px;">📖 Mémorisation du Coran</div>
+  <div class="pcats" id="prog-quran-cats">
+    <div class="pcat"><div class="pcat-t"><span>✓ Versets mémorisés</span><span id="pq-done-n">0</span></div><div class="pcat-bar"><div class="pcat-fill g" id="pq-done-b" style="width:0%"></div></div></div>
+    <div class="pcat"><div class="pcat-t"><span>📖 En cours d'apprentissage</span><span id="pq-learn-n">0</span></div><div class="pcat-bar"><div class="pcat-fill y" id="pq-learn-b" style="width:0%"></div></div></div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;" id="prog-surah-chips"></div>
+
   <div class="center" style="margin-top:24px;">
     <button class="btn-gh" onclick="if(confirm('Réinitialiser ?'))resetProg()">🗑 Réinitialiser</button>
   </div>
@@ -1728,7 +1742,7 @@ function setReciter(id){
 function resetSettings(){
   if(!confirm('Réinitialiser les préférences visuelles ?')) return;
   delete ST.theme; delete ST.fontScale; delete ST.arFont; delete ST.audioRate;
-  ST.uiSound = true; save();
+  ST.uiSound = false; save();
   applyTheme('dark');
   document.documentElement.style.setProperty('--ar-scale', 1);
   document.documentElement.style.setProperty('--ar-font', "'Scheherazade New'");
@@ -1852,6 +1866,13 @@ function renderSurahs(){
     const status = ST.surahStatus[s.num]||'';
     const inPL = ST.playlist.includes(s.num);
     const typeCls = s.type==='mecquoise'?'mec':'med';
+    // Barre de progression memorisation versets
+    const prefix = s.num+'-';
+    const doneV = Object.keys(ST.ayahStatus||{}).filter(k=>k.startsWith(prefix)&&ST.ayahStatus[k]==='done').length;
+    const learnV = Object.keys(ST.ayahStatus||{}).filter(k=>k.startsWith(prefix)&&ST.ayahStatus[k]==='learning').length;
+    const pctDone = s.count>0 ? Math.round(doneV/s.count*100) : 0;
+    const pctLearn = s.count>0 ? Math.round(learnV/s.count*100) : 0;
+    const progBar = (doneV+learnV)>0 ? `<div class="sc-progbar"><div class="sc-progbar-done" style="width:${pctDone}%"></div><div class="sc-progbar-learn" style="width:${pctLearn}%"></div></div>` : '';
     return `<div class="sc${isFav?' fav':''}" id="sc-${s.num}">
       <div class="sc-hdr" onclick="toggleSurah(${s.num})">
         <div class="sc-num">${s.num}</div>
@@ -1859,6 +1880,7 @@ function renderSurahs(){
           <div class="sc-ar">${s.ar}</div>
           <div class="sc-fr">${s.fr} <span class="sc-type ${typeCls}">${s.type}</span></div>
           <div class="sc-meta">${s.count} versets<span id="ayah-prog-${s.num}">${getAyahProgText(s.num)}</span>${isFav?' · ⭐':''}</div>
+          ${progBar}
         </div>
         <div class="sc-actions" onclick="event.stopPropagation()">
           <button class="sc-favbtn sc-playbtn" onclick="playSurah(${s.num},false)" title="Lire">▶</button>
@@ -1943,7 +1965,8 @@ function toggleSurah(num){
 async function openSurah(num){
   const cont = document.getElementById('sbody-content-'+num);
   const audio = document.getElementById('saudio-'+num);
-  if(!cont || cont.dataset.loaded==='true') return;
+  if(!cont || cont.dataset.loaded==='true' || cont.dataset.loading==='true') return;
+  cont.dataset.loading = 'true';
   // Bismillah (sauf sourate 9)
   const bismillah = num!==9 ? '<div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>' : '';
   cont.innerHTML = bismillah + '<div class="surah-loading"><div class="spin"></div><br>Chargement…</div>';
@@ -1970,8 +1993,10 @@ async function openSurah(num){
         </div>
       </div>`).join('');
     cont.dataset.loaded = 'true';
+    cont.dataset.loading = '';
     if(audio) audio.style.display = '';
   } catch(e) {
+    cont.dataset.loading = '';
     cont.innerHTML = bismillah + `<div style="text-align:center;padding:20px;color:var(--mu);">Erreur de chargement.<br><button onclick="openSurah(${num})" style="margin-top:8px;background:rgba(201,168,76,.15);border:1px solid var(--gold);color:var(--gold);border-radius:20px;padding:4px 14px;cursor:pointer;">🔄 Réessayer</button></div>`;
   }
 }
@@ -2394,8 +2419,44 @@ function renderProg(){
     const cls=ST.mastered[l.ar]?'m':ST.review[l.ar]?'r':'n';
     return `<div class="lpi ${cls}" title="${l.name}">${l.ar}</div>`;
   }).join('');
+
+  // ── Stats Coran ──
+  const doneAyahs   = Object.values(ST.ayahStatus||{}).filter(v=>v==='done').length;
+  const learnAyahs  = Object.values(ST.ayahStatus||{}).filter(v=>v==='learning').length;
+  const totalCached = Object.values(_surahCache||{}).reduce((t,a)=>t+(Array.isArray(a)?a.length:0),0);
+  const totalRef    = 6236; // total versets Coran
+  const totalBase   = totalCached > 0 ? totalCached : totalRef;
+  const el_dn = document.getElementById('pq-done-n');
+  const el_db = document.getElementById('pq-done-b');
+  const el_ln = document.getElementById('pq-learn-n');
+  const el_lb = document.getElementById('pq-learn-b');
+  if(el_dn) el_dn.textContent = doneAyahs;
+  if(el_db) el_db.style.width = Math.min(100, doneAyahs/totalRef*100)+'%';
+  if(el_ln) el_ln.textContent = learnAyahs;
+  if(el_lb) el_lb.style.width = Math.min(100, learnAyahs/totalRef*100)+'%';
+
+  // Chips sourates avec progression
+  const chips = document.getElementById('prog-surah-chips');
+  if(chips){
+    const doneSurahs   = SURAH_META.filter(s=>ST.surahStatus[s.num]==='done');
+    const learnSurahs  = SURAH_META.filter(s=>ST.surahStatus[s.num]==='learning');
+    const partialSurahs = SURAH_META.filter(s=>!ST.surahStatus[s.num] && Object.keys(ST.ayahStatus||{}).some(k=>k.startsWith(s.num+'-')));
+    const all = [
+      ...doneSurahs.map(s=>`<span style="background:rgba(201,168,76,.15);border:1px solid var(--gold);color:var(--gold);border-radius:20px;padding:3px 10px;font-size:11px;">✓ ${s.fr}</span>`),
+      ...learnSurahs.map(s=>`<span style="background:rgba(61,170,122,.12);border:1px solid #3daa7a;color:#3daa7a;border-radius:20px;padding:3px 10px;font-size:11px;">📖 ${s.fr}</span>`),
+      ...partialSurahs.map(s=>{
+        const pref=s.num+'-'; const dv=Object.keys(ST.ayahStatus).filter(k=>k.startsWith(pref)&&ST.ayahStatus[k]==='done').length;
+        return dv>0?`<span style="background:rgba(201,168,76,.07);border:1px solid var(--bd);color:var(--mu);border-radius:20px;padding:3px 10px;font-size:11px;">${s.fr} ${dv}v</span>`:'';
+      }),
+    ];
+    chips.innerHTML = all.filter(Boolean).join('') || `<span style="color:var(--mu);font-size:12px;">Aucun verset mémorisé pour l'instant — ouvre une sourate et clique sur ✓ Mémorisé !</span>`;
+  }
 }
-function resetProg(){ST={mastered:{},review:{},xp:0,streak:0,lastDay:'',favs:{},surahStatus:{},playlist:[],activity:{}};save();updateXPBar();renderAlpha();renderProg();}
+function resetProg(){
+  const keep={theme:ST.theme,fontScale:ST.fontScale,arFont:ST.arFont,audioRate:ST.audioRate,uiSound:ST.uiSound,reciter:ST.reciter,userName:ST.userName};
+  ST=Object.assign({mastered:{},review:{},xp:0,streak:0,lastDay:'',favs:{},surahStatus:{},playlist:[],activity:{},ayahStatus:{}},keep);
+  save();updateXPBar();renderAlpha();renderSurahs();renderProg();
+}
 
 // ═══════════════════════════════════════════
 // DUAS
@@ -2588,6 +2649,7 @@ function renderHome(){
   const s = document.getElementById('home-streak'); if(s) s.textContent = ST.streak||0;
   const x = document.getElementById('home-xp');     if(x) x.textContent = ST.xp||0;
   const l = document.getElementById('home-letters');if(l) l.textContent = Object.keys(ST.mastered||{}).length;
+  const a = document.getElementById('home-ayahs');  if(a) a.textContent = Object.values(ST.ayahStatus||{}).filter(v=>v==='done').length;
 
   // Dua du jour (stable par jour)
   if(typeof DUAS_CATS !== 'undefined' && DUAS_CATS.length){

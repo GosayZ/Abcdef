@@ -358,6 +358,26 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
   .theme-grid{grid-template-columns:repeat(2,1fr);}
   .settings-card{padding:16px;}
 }
+/* ── Récitants ── */
+.reciter-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:2px;}
+.rchip{background:var(--panel2);border:1.5px solid var(--bd);color:var(--tx);padding:10px 8px;border-radius:10px;cursor:pointer;font-size:11px;text-align:center;line-height:1.4;transition:all .2s;}
+.rchip:hover,.rchip.active{border-color:var(--gold);color:var(--gold);}
+.rchip.active{background:rgba(201,168,76,.12);box-shadow:0 0 0 2px rgba(201,168,76,.18);}
+.rchip-flag{font-size:16px;display:block;margin-bottom:3px;}
+.rchip-name{font-weight:600;display:block;}
+.rchip-sub{font-size:10px;color:var(--mu);display:block;}
+/* ── Recherche sourates ── */
+.surah-search{width:100%;background:var(--panel2);border:1px solid var(--bd2);color:var(--tx);border-radius:12px;padding:10px 14px;font-size:14px;outline:none;transition:border-color .2s;margin-bottom:14px;box-sizing:border-box;}
+.surah-search:focus{border-color:var(--gold);}
+/* ── Badge type sourate ── */
+.sc-type{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--bd);color:var(--mu);}
+.sc-type.mec{border-color:rgba(201,168,76,.3);color:var(--gold-d,#b8962a);}
+.sc-type.med{border-color:rgba(61,170,122,.3);color:#3daa7a;}
+/* ── Spinner chargement sourate ── */
+.surah-loading{text-align:center;padding:32px 0;color:var(--mu);font-size:13px;}
+.spin{display:inline-block;width:28px;height:28px;border:3px solid var(--bd2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:480px){.reciter-grid{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
 <body data-theme="dark">
@@ -412,6 +432,11 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 
     <div class="settings-row settings-check">
       <label><input type="checkbox" id="set-uisound" onchange="setUiSound(this.checked)"> Sons d'interface (clics, XP)</label>
+    </div>
+
+    <div class="settings-row">
+      <label>Récitant du Coran</label>
+      <div id="reciter-grid" class="reciter-grid"></div>
     </div>
 
     <div class="settings-row">
@@ -571,8 +596,9 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 
 <!-- SURAHS -->
 <div class="sec" id="sec-surahs">
-  <div class="stitle">سور قصيرة</div>
-  <div class="ssub">Appuie sur ⭐ pour mettre en favori · 🎵 pour la playlist</div>
+  <div class="stitle">القرآن الكريم</div>
+  <div class="ssub">114 sourates · ⭐ favori · 🎵 playlist</div>
+  <input class="surah-search" id="surah-search" placeholder="🔍 Chercher une sourate..." oninput="renderSurahs()">
   <div class="surah-tabs" id="surah-tabs">
     <button class="stab active" onclick="filterSurahs('all',this)">Toutes</button>
     <button class="stab" onclick="filterSurahs('fav',this)">⭐ Favoris</button>
@@ -1003,6 +1029,129 @@ const SURAHS=[
     {n:110,ar:"قُلْ آمِنُوا بِهِ أَوْ لَا تُؤْمِنُوا ۚ إِنَّ الَّذِينَ أُوتُوا الْعِلْمَ مِن قَبْلِهِ إِذَا يُتْلَىٰ عَلَيْهِمْ يَخِرُّونَ لِلْأَذْقَانِ سُجَّدًا",tr:"Qul āminū bihi aw lā tu'minū inna lladhīna ūtū l-ʿilma min qablihi idhā yutlā ʿalayhim yakhirrūna li-l-adhqāni sujjadā",fr:"Dis : « Croyez-y ou n'y croyez pas. Ceux qui ont reçu la science avant lui se prosternent le visage contre terre quand on le leur récite. »",tafsir:"Dernier verset de la sourate : les vrais savants reconnaissent la vérité du Coran et se prosternent. La science véritable mène à l'humilité devant Allah, pas à l'arrogance."},
   ]},
 ];
+
+// Initialise le cache mémoire depuis les sourates existantes
+const _surahCache = {};
+SURAHS.forEach(s => { _surahCache[s.num] = s.ayat; });
+
+// Métadonnées des 114 sourates (légères — sans le texte des versets)
+const SURAH_META = [
+  {num:1,   ar:"الفَاتِحَة",        fr:"Al-Fatiha",        count:7,   type:'mecquoise'},
+  {num:2,   ar:"البَقَرَة",          fr:"Al-Baqara",        count:286, type:'médinoise'},
+  {num:3,   ar:"آل عِمْرَان",        fr:"Al-Imran",         count:200, type:'médinoise'},
+  {num:4,   ar:"النِّسَاء",          fr:"An-Nisa",          count:176, type:'médinoise'},
+  {num:5,   ar:"المَائِدَة",         fr:"Al-Maida",         count:120, type:'médinoise'},
+  {num:6,   ar:"الأَنْعَام",         fr:"Al-Anam",          count:165, type:'mecquoise'},
+  {num:7,   ar:"الأَعْرَاف",         fr:"Al-Araf",          count:206, type:'mecquoise'},
+  {num:8,   ar:"الأَنفَال",          fr:"Al-Anfal",         count:75,  type:'médinoise'},
+  {num:9,   ar:"التَّوبَة",          fr:"At-Tawba",         count:129, type:'médinoise'},
+  {num:10,  ar:"يُونُس",             fr:"Yunus",            count:109, type:'mecquoise'},
+  {num:11,  ar:"هُود",               fr:"Hud",              count:123, type:'mecquoise'},
+  {num:12,  ar:"يُوسُف",             fr:"Yusuf",            count:111, type:'mecquoise'},
+  {num:13,  ar:"الرَّعد",            fr:"Ar-Rad",           count:43,  type:'médinoise'},
+  {num:14,  ar:"إِبْرَاهِيم",         fr:"Ibrahim",          count:52,  type:'mecquoise'},
+  {num:15,  ar:"الحِجر",             fr:"Al-Hijr",          count:99,  type:'mecquoise'},
+  {num:16,  ar:"النَّحل",            fr:"An-Nahl",          count:128, type:'mecquoise'},
+  {num:17,  ar:"الإِسْرَاء",         fr:"Al-Isra",          count:111, type:'mecquoise'},
+  {num:18,  ar:"الكهف",              fr:"Al-Kahf",          count:110, type:'mecquoise'},
+  {num:19,  ar:"مَريَم",             fr:"Maryam",           count:98,  type:'mecquoise'},
+  {num:20,  ar:"طه",                 fr:"Taha",             count:135, type:'mecquoise'},
+  {num:21,  ar:"الأَنبِيَاء",        fr:"Al-Anbiya",        count:112, type:'mecquoise'},
+  {num:22,  ar:"الحَجّ",             fr:"Al-Hajj",          count:78,  type:'médinoise'},
+  {num:23,  ar:"المُؤمِنُون",        fr:"Al-Muminun",       count:118, type:'mecquoise'},
+  {num:24,  ar:"النُّور",            fr:"An-Nur",           count:64,  type:'médinoise'},
+  {num:25,  ar:"الفُرقَان",          fr:"Al-Furqan",        count:77,  type:'mecquoise'},
+  {num:26,  ar:"الشُّعَرَاء",        fr:"Ash-Shuara",       count:227, type:'mecquoise'},
+  {num:27,  ar:"النَّمل",            fr:"An-Naml",          count:93,  type:'mecquoise'},
+  {num:28,  ar:"القَصَص",            fr:"Al-Qasas",         count:88,  type:'mecquoise'},
+  {num:29,  ar:"العَنكَبُوت",        fr:"Al-Ankabut",       count:69,  type:'mecquoise'},
+  {num:30,  ar:"الرُّوم",            fr:"Ar-Rum",           count:60,  type:'mecquoise'},
+  {num:31,  ar:"لُقمَان",            fr:"Luqman",           count:34,  type:'mecquoise'},
+  {num:32,  ar:"السَّجدَة",          fr:"As-Sajda",         count:30,  type:'mecquoise'},
+  {num:33,  ar:"الأَحزَاب",          fr:"Al-Ahzab",         count:73,  type:'médinoise'},
+  {num:34,  ar:"سَبَأ",              fr:"Saba",             count:54,  type:'mecquoise'},
+  {num:35,  ar:"فَاطِر",             fr:"Fatir",            count:45,  type:'mecquoise'},
+  {num:36,  ar:"يس",                 fr:"Ya-Sin",           count:83,  type:'mecquoise'},
+  {num:37,  ar:"الصَّافَّات",        fr:"As-Saffat",        count:182, type:'mecquoise'},
+  {num:38,  ar:"ص",                  fr:"Sad",              count:88,  type:'mecquoise'},
+  {num:39,  ar:"الزُّمَر",           fr:"Az-Zumar",         count:75,  type:'mecquoise'},
+  {num:40,  ar:"غَافِر",             fr:"Ghafir",           count:85,  type:'mecquoise'},
+  {num:41,  ar:"فُصِّلَت",           fr:"Fussilat",         count:54,  type:'mecquoise'},
+  {num:42,  ar:"الشُّورَى",          fr:"Ash-Shura",        count:53,  type:'mecquoise'},
+  {num:43,  ar:"الزُّخرُف",          fr:"Az-Zukhruf",       count:89,  type:'mecquoise'},
+  {num:44,  ar:"الدُّخَان",          fr:"Ad-Dukhan",        count:59,  type:'mecquoise'},
+  {num:45,  ar:"الجَاثِيَة",         fr:"Al-Jathiya",       count:37,  type:'mecquoise'},
+  {num:46,  ar:"الأَحقَاف",          fr:"Al-Ahqaf",         count:35,  type:'mecquoise'},
+  {num:47,  ar:"مُحَمَّد",           fr:"Muhammad",         count:38,  type:'médinoise'},
+  {num:48,  ar:"الفَتح",             fr:"Al-Fath",          count:29,  type:'médinoise'},
+  {num:49,  ar:"الحُجُرَات",         fr:"Al-Hujurat",       count:18,  type:'médinoise'},
+  {num:50,  ar:"ق",                  fr:"Qaf",              count:45,  type:'mecquoise'},
+  {num:51,  ar:"الذَّارِيَات",       fr:"Adh-Dhariyat",     count:60,  type:'mecquoise'},
+  {num:52,  ar:"الطُّور",            fr:"At-Tur",           count:49,  type:'mecquoise'},
+  {num:53,  ar:"النَّجم",            fr:"An-Najm",          count:62,  type:'mecquoise'},
+  {num:54,  ar:"القَمَر",            fr:"Al-Qamar",         count:55,  type:'mecquoise'},
+  {num:55,  ar:"الرَّحمَن",          fr:"Ar-Rahman",        count:78,  type:'mecquoise'},
+  {num:56,  ar:"الوَاقِعَة",         fr:"Al-Waqia",         count:96,  type:'mecquoise'},
+  {num:57,  ar:"الحَدِيد",           fr:"Al-Hadid",         count:29,  type:'médinoise'},
+  {num:58,  ar:"المُجَادِلَة",       fr:"Al-Mujadila",      count:22,  type:'médinoise'},
+  {num:59,  ar:"الحَشر",             fr:"Al-Hashr",         count:24,  type:'médinoise'},
+  {num:60,  ar:"المُمتَحِنَة",       fr:"Al-Mumtahana",     count:13,  type:'médinoise'},
+  {num:61,  ar:"الصَّفّ",            fr:"As-Saf",           count:14,  type:'médinoise'},
+  {num:62,  ar:"الجُمُعَة",          fr:"Al-Jumua",         count:11,  type:'médinoise'},
+  {num:63,  ar:"المُنَافِقُون",      fr:"Al-Munafiqun",     count:11,  type:'médinoise'},
+  {num:64,  ar:"التَّغَابُن",        fr:"At-Taghabun",      count:18,  type:'médinoise'},
+  {num:65,  ar:"الطَّلَاق",          fr:"At-Talaq",         count:12,  type:'médinoise'},
+  {num:66,  ar:"التَّحرِيم",         fr:"At-Tahrim",        count:12,  type:'médinoise'},
+  {num:67,  ar:"المُلك",             fr:"Al-Mulk",          count:30,  type:'mecquoise'},
+  {num:68,  ar:"القَلَم",            fr:"Al-Qalam",         count:52,  type:'mecquoise'},
+  {num:69,  ar:"الحَاقَّة",          fr:"Al-Haqqa",         count:52,  type:'mecquoise'},
+  {num:70,  ar:"المَعَارِج",         fr:"Al-Maarij",        count:44,  type:'mecquoise'},
+  {num:71,  ar:"نُوح",               fr:"Nuh",              count:28,  type:'mecquoise'},
+  {num:72,  ar:"الجِنّ",             fr:"Al-Jinn",          count:28,  type:'mecquoise'},
+  {num:73,  ar:"المُزَّمِّل",        fr:"Al-Muzzammil",     count:20,  type:'mecquoise'},
+  {num:74,  ar:"المُدَّثِّر",        fr:"Al-Muddaththir",   count:56,  type:'mecquoise'},
+  {num:75,  ar:"القِيَامَة",         fr:"Al-Qiyama",        count:40,  type:'mecquoise'},
+  {num:76,  ar:"الإِنسَان",          fr:"Al-Insan",         count:31,  type:'médinoise'},
+  {num:77,  ar:"المُرسَلَات",        fr:"Al-Mursalat",      count:50,  type:'mecquoise'},
+  {num:78,  ar:"النَّبَأ",           fr:"An-Naba",          count:40,  type:'mecquoise'},
+  {num:79,  ar:"النَّازِعَات",       fr:"An-Naziat",        count:46,  type:'mecquoise'},
+  {num:80,  ar:"عَبَسَ",             fr:"Abasa",            count:42,  type:'mecquoise'},
+  {num:81,  ar:"التَّكوِير",         fr:"At-Takwir",        count:29,  type:'mecquoise'},
+  {num:82,  ar:"الإِنفِطَار",        fr:"Al-Infitar",       count:19,  type:'mecquoise'},
+  {num:83,  ar:"المُطَفِّفِين",      fr:"Al-Mutaffifin",    count:36,  type:'mecquoise'},
+  {num:84,  ar:"الإِنشِقَاق",        fr:"Al-Inshiqaq",      count:25,  type:'mecquoise'},
+  {num:85,  ar:"البُرُوج",           fr:"Al-Buruj",         count:22,  type:'mecquoise'},
+  {num:86,  ar:"الطَّارِق",          fr:"At-Tariq",         count:17,  type:'mecquoise'},
+  {num:87,  ar:"الأَعلَى",           fr:"Al-Ala",           count:19,  type:'mecquoise'},
+  {num:88,  ar:"الغَاشِيَة",         fr:"Al-Ghashiya",      count:26,  type:'mecquoise'},
+  {num:89,  ar:"الفَجر",             fr:"Al-Fajr",          count:30,  type:'mecquoise'},
+  {num:90,  ar:"البَلَد",            fr:"Al-Balad",         count:20,  type:'mecquoise'},
+  {num:91,  ar:"الشَّمس",            fr:"Ash-Shams",        count:15,  type:'mecquoise'},
+  {num:92,  ar:"اللَّيل",            fr:"Al-Layl",          count:21,  type:'mecquoise'},
+  {num:93,  ar:"الضُّحَى",           fr:"Ad-Duha",          count:11,  type:'mecquoise'},
+  {num:94,  ar:"الشَّرح",            fr:"Al-Inshirah",      count:8,   type:'mecquoise'},
+  {num:95,  ar:"التِّين",            fr:"At-Tin",           count:8,   type:'mecquoise'},
+  {num:96,  ar:"العَلَق",            fr:"Al-Alaq",          count:19,  type:'mecquoise'},
+  {num:97,  ar:"القَدر",             fr:"Al-Qadr",          count:5,   type:'mecquoise'},
+  {num:98,  ar:"البَيِّنَة",         fr:"Al-Bayyina",       count:8,   type:'médinoise'},
+  {num:99,  ar:"الزَّلزَلَة",        fr:"Az-Zalzala",       count:8,   type:'médinoise'},
+  {num:100, ar:"العَادِيَات",        fr:"Al-Adiyat",        count:11,  type:'mecquoise'},
+  {num:101, ar:"القَارِعَة",         fr:"Al-Qaria",         count:11,  type:'mecquoise'},
+  {num:102, ar:"التَّكَاثُر",        fr:"At-Takathur",      count:8,   type:'mecquoise'},
+  {num:103, ar:"الْعَصْر",           fr:"Al-Asr",           count:3,   type:'mecquoise'},
+  {num:104, ar:"الهُمَزَة",          fr:"Al-Humaza",        count:9,   type:'mecquoise'},
+  {num:105, ar:"الفِيل",             fr:"Al-Fil",           count:5,   type:'mecquoise'},
+  {num:106, ar:"قُرَيش",             fr:"Quraysh",          count:4,   type:'mecquoise'},
+  {num:107, ar:"المَاعُون",          fr:"Al-Maun",          count:7,   type:'mecquoise'},
+  {num:108, ar:"الكَوْثَر",          fr:"Al-Kawthar",       count:3,   type:'mecquoise'},
+  {num:109, ar:"الكَافِرُون",        fr:"Al-Kafirun",       count:6,   type:'mecquoise'},
+  {num:110, ar:"النَّصر",            fr:"An-Nasr",          count:3,   type:'médinoise'},
+  {num:111, ar:"الْمَسَد",           fr:"Al-Masad",         count:5,   type:'mecquoise'},
+  {num:112, ar:"الإِخْلَاص",         fr:"Al-Ikhlas",        count:4,   type:'mecquoise'},
+  {num:113, ar:"الفَلَق",            fr:"Al-Falaq",         count:5,   type:'mecquoise'},
+  {num:114, ar:"النَّاس",            fr:"An-Nas",           count:6,   type:'mecquoise'},
+];
+
 const DICT=[
   {ar:'اللَّه',tr:'Allāh',fr:'Dieu',tag:'Essentiel'},
   {ar:'رَبّ',tr:'Rabb',fr:'Seigneur',tag:'Essentiel'},
@@ -1051,6 +1200,7 @@ if(!ST.surahStatus)ST.surahStatus={};
 if(!ST.playlist)ST.playlist=[];
 if(!ST.activity)ST.activity={};
 if(ST.uiSound===undefined)ST.uiSound=true;
+if(!ST.reciter)ST.reciter='Alafasy_128kbps';
 
 function save(){localStorage.setItem('nourST',JSON.stringify(ST));}
 
@@ -1099,8 +1249,12 @@ function updateXPBar(){
 // AUDIO — EveryAyah API (vraies récitations) + fallback Web Speech
 // ═══════════════════════════════════════════
 
-// Récitant : Husary (qualité, lent, clair pour apprendre)
-const RECITER = 'Husary_128kbps';
+// 3 récitants disponibles
+const RECITERS = [
+  {id:'Alafasy_128kbps',              name:'Mishary Alafasy',        nameAr:'مشاري العفاسي',        flag:'🇰🇼'},
+  {id:'Husary_128kbps',               name:'Mahmoud Husary',         nameAr:'محمود الحصري',         flag:'🇪🇬'},
+  {id:'Abdul_Basit_Murattal_192kbps', name:'Abdul Basit Murattal',   nameAr:'عبد الباسط عبد الصمد', flag:'🇪🇬'},
+];
 
 // Audio lettres — fichiers locaux dans audio/letters/
 const LETTER_LOCAL_FILES = {
@@ -1123,9 +1277,24 @@ const LETTER_NAMES = {
 
 // Construit l'URL EveryAyah pour un verset
 function everyAyahUrl(surahNum, ayahNum){
+  const reciter = (typeof ST!=='undefined' && ST.reciter) ? ST.reciter : 'Alafasy_128kbps';
   const s = String(surahNum).padStart(3,'0');
   const a = String(ayahNum).padStart(3,'0');
-  return `https://everyayah.com/data/${RECITER}/${s}${a}.mp3`;
+  return `https://everyayah.com/data/${reciter}/${s}${a}.mp3`;
+}
+
+// Charge les versets d'une sourate depuis AlQuran.cloud (avec cache)
+async function loadSurahData(num){
+  if(_surahCache[num]) return _surahCache[num];
+  const url = `https://api.alquran.cloud/v1/surah/${num}/editions/quran-uthmani,en.transliteration,fr.hamidullah`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  const [arEd, trEd, frEd] = json.data;
+  _surahCache[num] = arEd.ayahs.map((a,i) => ({
+    n: a.numberInSurah, ar: a.text, tr: trEd.ayahs[i].text, fr: frEd.ayahs[i].text
+  }));
+  return _surahCache[num];
 }
 
 let currentAudio = null;
@@ -1397,6 +1566,7 @@ function openSettings(){
   document.querySelectorAll('.tchip').forEach(c=>{
     c.classList.toggle('active', c.dataset.themeVal===(ST.theme||'dark'));
   });
+  renderReciterGrid();
   document.getElementById('settings-modal').classList.add('show');
 }
 function closeSettings(){ document.getElementById('settings-modal').classList.remove('show'); }
@@ -1420,6 +1590,20 @@ function setUserName(v){
   ST.userName = (v||'').trim(); save();
   if(typeof renderHome === 'function') renderHome();
 }
+function renderReciterGrid(){
+  const grid = document.getElementById('reciter-grid');
+  if(!grid) return;
+  grid.innerHTML = RECITERS.map(r => `
+    <button class="rchip${ST.reciter===r.id?' active':''}" onclick="setReciter('${r.id}')">
+      <span class="rchip-flag">${r.flag}</span>
+      <span class="rchip-name">${r.name}</span>
+      <span class="rchip-sub">${r.nameAr}</span>
+    </button>`).join('');
+}
+function setReciter(id){
+  ST.reciter = id; save(); renderReciterGrid();
+}
+
 function resetSettings(){
   if(!confirm('Réinitialiser les préférences visuelles ?')) return;
   delete ST.theme; delete ST.fontScale; delete ST.arFont; delete ST.audioRate;
@@ -1530,22 +1714,30 @@ function filterSurahs(f,btn){
 }
 
 function renderSurahs(){
-  let list=SURAHS;
-  if(surahFilter==='fav') list=SURAHS.filter(s=>ST.favs[s.num]);
-  else if(surahFilter==='learning') list=SURAHS.filter(s=>ST.surahStatus[s.num]==='learning');
-  else if(surahFilter==='done') list=SURAHS.filter(s=>ST.surahStatus[s.num]==='done');
+  const q = (document.getElementById('surah-search')||{}).value||'';
+  const qlo = q.toLowerCase().trim();
+  let list = SURAH_META;
+  if(surahFilter==='fav') list = list.filter(s=>ST.favs[s.num]);
+  else if(surahFilter==='learning') list = list.filter(s=>ST.surahStatus[s.num]==='learning');
+  else if(surahFilter==='done') list = list.filter(s=>ST.surahStatus[s.num]==='done');
+  if(qlo) list = list.filter(s=>
+    s.fr.toLowerCase().includes(qlo) ||
+    s.ar.includes(q) ||
+    String(s.num).includes(qlo)
+  );
 
-  document.getElementById('surah-list').innerHTML=list.map(s=>{
-    const isFav=ST.favs[s.num];
-    const status=ST.surahStatus[s.num]||'';
-    const inPL=ST.playlist.includes(s.num);
+  document.getElementById('surah-list').innerHTML = list.map(s=>{
+    const isFav = ST.favs[s.num];
+    const status = ST.surahStatus[s.num]||'';
+    const inPL = ST.playlist.includes(s.num);
+    const typeCls = s.type==='mecquoise'?'mec':'med';
     return `<div class="sc${isFav?' fav':''}" id="sc-${s.num}">
       <div class="sc-hdr" onclick="toggleSurah(${s.num})">
         <div class="sc-num">${s.num}</div>
         <div class="sc-info">
           <div class="sc-ar">${s.ar}</div>
-          <div class="sc-fr">${s.fr}</div>
-          <div class="sc-meta">${s.sub} · ${s.ayat.length} versets${isFav?' · ⭐':''}</div>
+          <div class="sc-fr">${s.fr} <span class="sc-type ${typeCls}">${s.type}</span></div>
+          <div class="sc-meta">${s.count} versets${isFav?' · ⭐':''}</div>
         </div>
         <div class="sc-actions" onclick="event.stopPropagation()">
           <button class="sc-favbtn" onclick="toggleFav(${s.num})" title="Favori">${isFav?'⭐':'☆'}</button>
@@ -1558,24 +1750,8 @@ function renderSurahs(){
           <button class="sc-status-btn${status==='learning'?' active':''}" onclick="setSurahStatus(${s.num},'learning')">📖 En cours</button>
           <button class="sc-status-btn${status==='done'?' active':''}" onclick="setSurahStatus(${s.num},'done')">✓ Mémorisée</button>
         </div>
-        <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
-        ${s.ayat.map(a=>`
-          <div class="ayah">
-            <div class="anum">${a.n}</div>
-            <div class="acontent">
-              <div class="aar">${a.ar} <span style="color:var(--gold);font-size:16px;">﴿${a.n}﴾</span></div>
-              <div class="atr">${a.tr}</div>
-              <div class="afr">${a.fr}</div>
-              <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-                <button style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;" onclick="playAyah(${s.num},${a.n},false)">▶ Écouter</button>
-                <button style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;" id="loopv-${s.num}-${a.n}" onclick="playAyah(${s.num},${a.n},true)">🔁 Boucle</button>
-                <button style="background:rgba(200,80,80,.08);border:1px solid rgba(200,80,80,.2);color:var(--red);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;" onclick="stopAll()">⏹</button>
-                ${a.tafsir ? `<button style="background:rgba(201,168,76,.05);border:1px solid var(--bd);color:var(--gold);border-radius:20px;padding:3px 10px;font-size:10px;cursor:pointer;" onclick="event.stopPropagation();toggleTafsir(${s.num},${a.n})">Tafsir</button>` : ''}
-              </div>
-              ${a.tafsir ? `<div class="atafsir" id="tafsir-${s.num}-${a.n}" style="display:none;margin-top:8px;padding:8px 0 2px;border-top:1px dashed var(--bd);font-size:12px;color:var(--mu);line-height:1.6;animation:fu .2s ease;"><strong style="color:var(--gold);">Tafsir :</strong> <em>${a.tafsir}</em></div>` : ''}
-            </div>
-          </div>`).join('')}
-        <div class="sc-audioctrl">
+        <div id="sbody-content-${s.num}"></div>
+        <div class="sc-audioctrl" id="saudio-${s.num}" style="display:none">
           <div class="sc-audioctrl-title">Lecture audio</div>
           <div class="sc-btns">
             <button class="play-btn" onclick="playSurah(${s.num},false)">▶ Lire</button>
@@ -1586,7 +1762,7 @@ function renderSurahs(){
         </div>
       </div>
     </div>`;
-  }).join('') || '<div style="text-align:center;padding:30px;color:var(--mu);">Aucune sourate dans cette catégorie.</div>';
+  }).join('') || '<div style="text-align:center;padding:30px;color:var(--mu);">Aucune sourate trouvée.</div>';
 }
 
 function toggleTafsir(sNum, aN){
@@ -1615,8 +1791,8 @@ function loopAyahStep(){
     // lecture unique
     const url = everyAyahUrl(ayahLoopNum, ayahLoopN);
     playMp3(url, null, ()=>{
-      const s = SURAHS.find(x=>x.num===ayahLoopNum);
-      const a = s?.ayat.find(x=>x.n===ayahLoopN);
+      const ayat = _surahCache[ayahLoopNum]||[];
+      const a = ayat.find(x=>x.n===ayahLoopN);
       if(a) speakFallback(a.ar);
     });
     ayahLoopNum = 0;
@@ -1627,8 +1803,8 @@ function loopAyahStep(){
   playMp3(url,
     ()=>{ setTimeout(loopAyahStep, 600); },
     ()=>{
-      const s = SURAHS.find(x=>x.num===ayahLoopNum);
-      const a = s?.ayat.find(x=>x.n===ayahLoopN);
+      const ayat = _surahCache[ayahLoopNum]||[];
+      const a = ayat.find(x=>x.n===ayahLoopN);
       if(a) speakFallbackWithCb(a.ar, ()=>setTimeout(loopAyahStep,600));
       else ayahLoopActive=false;
     }
@@ -1640,6 +1816,38 @@ function toggleSurah(num){
   const t=document.getElementById('stog-'+num);
   const open=b.classList.toggle('open');
   t.textContent=open?'▲':'▼';
+  if(open) openSurah(num);
+}
+async function openSurah(num){
+  const cont = document.getElementById('sbody-content-'+num);
+  const audio = document.getElementById('saudio-'+num);
+  if(!cont || cont.dataset.loaded==='true') return;
+  // Bismillah (sauf sourate 9)
+  const bismillah = num!==9 ? '<div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>' : '';
+  cont.innerHTML = bismillah + '<div class="surah-loading"><div class="spin"></div><br>Chargement…</div>';
+  try {
+    const ayat = await loadSurahData(num);
+    cont.innerHTML = bismillah + ayat.map(a=>`
+      <div class="ayah">
+        <div class="anum">${a.n}</div>
+        <div class="acontent">
+          <div class="aar">${a.ar} <span style="color:var(--gold);font-size:16px;">﴿${a.n}﴾</span></div>
+          <div class="atr">${a.tr||''}</div>
+          <div class="afr">${a.fr||''}</div>
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+            <button style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;" onclick="playAyah(${num},${a.n},false)">▶ Écouter</button>
+            <button style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;" id="loopv-${num}-${a.n}" onclick="playAyah(${num},${a.n},true)">🔁 Boucle</button>
+            <button style="background:rgba(200,80,80,.08);border:1px solid rgba(200,80,80,.2);color:var(--red);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;" onclick="stopAll()">⏹</button>
+            ${a.tafsir ? `<button style="background:rgba(201,168,76,.05);border:1px solid var(--bd);color:var(--gold);border-radius:20px;padding:3px 10px;font-size:10px;cursor:pointer;" onclick="event.stopPropagation();toggleTafsir(${num},${a.n})">Tafsir</button>` : ''}
+          </div>
+          ${a.tafsir ? `<div class="atafsir" id="tafsir-${num}-${a.n}" style="display:none;margin-top:8px;padding:8px 0 2px;border-top:1px dashed var(--bd);font-size:12px;color:var(--mu);line-height:1.6;animation:fu .2s ease;"><strong style="color:var(--gold);">Tafsir :</strong> <em>${a.tafsir}</em></div>` : ''}
+        </div>
+      </div>`).join('');
+    cont.dataset.loaded = 'true';
+    if(audio) audio.style.display = '';
+  } catch(e) {
+    cont.innerHTML = bismillah + `<div style="text-align:center;padding:20px;color:var(--mu);">Erreur de chargement.<br><button onclick="openSurah(${num})" style="margin-top:8px;background:rgba(201,168,76,.15);border:1px solid var(--gold);color:var(--gold);border-radius:20px;padding:4px 14px;cursor:pointer;">🔄 Réessayer</button></div>`;
+  }
 }
 function toggleFav(num){
   ST.favs[num]=!ST.favs[num];
@@ -1667,31 +1875,31 @@ function showToast(msg){
 
 // Surah audio player
 let surahAyahIdx=0,surahNumPlaying=0,surahLoopMode=false;
-function playSurah(num,loop){
+async function playSurah(num,loop){
   stopAll();
   surahNumPlaying=num; surahAyahIdx=0; surahLoopMode=loop; surahPlaying=true;
   if(loop){
     const btn=document.getElementById('loop-'+num);
     if(btn)btn.style.borderColor='var(--gold)';
   }
+  try { await loadSurahData(num); } catch(e){}
   playNextAyah();
 }
 function playNextAyah(){
   if(!surahPlaying) return;
-  const s=SURAHS.find(x=>x.num===surahNumPlaying);
-  if(!s) return;
-  if(surahAyahIdx>=s.ayat.length){
+  const ayat = _surahCache[surahNumPlaying]||[];
+  if(surahAyahIdx>=ayat.length){
     if(surahLoopMode){ surahAyahIdx=0; setTimeout(playNextAyah,800); }
     else{ surahPlaying=false; const el=document.getElementById('pinfo-'+surahNumPlaying); if(el)el.textContent=''; }
     return;
   }
-  const a=s.ayat[surahAyahIdx];
+  const a=ayat[surahAyahIdx];
   const el=document.getElementById('pinfo-'+surahNumPlaying);
   if(el) el.textContent='▶ Verset '+a.n;
-  const url=everyAyahUrl(s.num, a.n);
+  const url=everyAyahUrl(surahNumPlaying, a.n);
   playMp3(url,
     ()=>{ if(surahPlaying){ surahAyahIdx++; setTimeout(playNextAyah,400); }},
-    ()=>{ // fallback Web Speech si EveryAyah échoue
+    ()=>{
       speakFallbackWithCb(a.ar, ()=>{ if(surahPlaying){ surahAyahIdx++; setTimeout(playNextAyah,600); }});
     }
   );
@@ -1711,7 +1919,7 @@ function renderPlaylist(){
     return;
   }
   items.innerHTML=ST.playlist.map((num,i)=>{
-    const s=SURAHS.find(x=>x.num===num);
+    const s=SURAH_META.find(x=>x.num===num);
     if(!s)return '';
     return `<div class="playlist-item${plPlaying&&plIdx===i?' playing':''}" id="pli-${i}">
       <div class="playlist-item-ar">${s.ar}</div>
@@ -1727,30 +1935,34 @@ function playPlaylist(){
   plPlaying=true; plIdx=0;
   playPLItem();
 }
-function playPLItem(){
+async function playPLItem(){
   if(!plPlaying||plIdx>=ST.playlist.length){
     if(plLoop&&plPlaying){plIdx=0;playPLItem();}
     else{plPlaying=false;document.getElementById('pl-info').textContent='';}
     return;
   }
   const num=ST.playlist[plIdx];
-  const s=SURAHS.find(x=>x.num===num);
+  const s=SURAH_META.find(x=>x.num===num);
   if(!s){plIdx++;playPLItem();return;}
-  document.getElementById('pl-info').textContent='▶ Lecture: '+s.fr+' ('+s.ar+')';
+  document.getElementById('pl-info').textContent='▶ Chargement: '+s.fr+'…';
   renderPlaylist();
+  try { await loadSurahData(num); } catch(e){}
+  document.getElementById('pl-info').textContent='▶ Lecture: '+s.fr+' ('+s.ar+')';
   surahNumPlaying=num; surahAyahIdx=0; surahLoopMode=false; surahPlaying=true;
-  playNextAyahPL(s);
+  playNextAyahPL(num);
 }
-function playNextAyahPL(s){
+function playNextAyahPL(num){
   if(!plPlaying) return;
-  if(surahAyahIdx>=s.ayat.length){ plIdx++; surahPlaying=false; setTimeout(playPLItem,600); return; }
-  const a=s.ayat[surahAyahIdx];
+  const s=SURAH_META.find(x=>x.num===num);
+  const ayat=_surahCache[num]||[];
+  if(surahAyahIdx>=ayat.length){ plIdx++; surahPlaying=false; setTimeout(playPLItem,600); return; }
+  const a=ayat[surahAyahIdx];
   const pi=document.getElementById('pl-info');
-  if(pi) pi.textContent='▶ '+s.fr+' — Verset '+a.n;
-  const url=everyAyahUrl(s.num, a.n);
+  if(pi) pi.textContent='▶ '+(s?s.fr:num)+' — Verset '+a.n;
+  const url=everyAyahUrl(num, a.n);
   playMp3(url,
-    ()=>{ surahAyahIdx++; setTimeout(()=>playNextAyahPL(s),400); },
-    ()=>{ speakFallbackWithCb(a.ar, ()=>{ surahAyahIdx++; setTimeout(()=>playNextAyahPL(s),600); }); }
+    ()=>{ surahAyahIdx++; setTimeout(()=>playNextAyahPL(num),400); },
+    ()=>{ speakFallbackWithCb(a.ar, ()=>{ surahAyahIdx++; setTimeout(()=>playNextAyahPL(num),600); }); }
   );
 }
 
@@ -2234,8 +2446,12 @@ function renderHome(){
   }
 
   // Verset du jour (stable par jour)
-  if(typeof SURAHS !== 'undefined' && SURAHS.length){
-    const allVerses = SURAHS.flatMap(s => (s.ayat||[]).map(a => ({...a, surahNum:s.num, surahFr:s.fr})));
+  if(typeof _surahCache !== 'undefined'){
+    const allVerses = Object.entries(_surahCache).flatMap(([num, ayat]) => {
+      if(!Array.isArray(ayat)) return [];
+      const meta = SURAH_META.find(s => s.num === Number(num));
+      return ayat.map(a => ({...a, surahNum: Number(num), surahFr: meta?.fr||''}));
+    });
     if(allVerses.length){
       const v = allVerses[(dy*7) % allVerses.length];
       const ar = document.getElementById('home-verse-ar'); if(ar) ar.textContent = v.ar||'';

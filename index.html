@@ -514,7 +514,31 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 .lr-star{font-size:54px;line-height:1;transform:scale(0);transition:transform .45s cubic-bezier(.34,1.56,.64,1);}
 .lr-star.show{transform:scale(1);}
 .lr-xp{background:rgba(201,168,76,.1);border:1px solid var(--bd2);border-radius:14px;padding:12px 28px;font-size:14px;color:var(--gold);font-weight:600;margin-bottom:26px;}
-@media(max-width:400px){.ex-choices{gap:8px;} .ex-choice{font-size:38px;padding:14px 6px 10px;} .ex-target{font-size:70px;}}
+/* Course intro screen */
+.ex-course-card{background:linear-gradient(135deg,var(--panel),var(--panel2));border:1.5px solid var(--bd2);border-radius:18px;padding:18px 16px;margin-bottom:4px;}
+.ex-course-badge{display:inline-block;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:600;margin-bottom:10px;}
+.ex-course-title{font-size:17px;font-weight:700;color:var(--tx);margin-bottom:14px;}
+.ex-course-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-top:1px solid var(--bd);}
+.ex-course-row:first-of-type{border-top:none;padding-top:0;}
+.ex-course-ar{font-family:'Scheherazade New',serif;font-size:40px;color:var(--gold);min-width:52px;text-align:center;line-height:1.1;flex-shrink:0;}
+.ex-course-info{flex:1;}
+.ex-course-name{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:3px;}
+.ex-course-ph{font-size:11px;color:var(--mu);font-style:italic;margin-left:5px;}
+.ex-course-tip{font-size:12px;color:var(--mu);line-height:1.6;}
+/* Name exercise */
+.ex-name-target{display:block;font-size:30px;font-weight:700;color:var(--gold);margin:4px auto 2px;text-align:center;letter-spacing:1px;}
+.ex-name-ph{display:block;font-size:13px;color:var(--mu);font-style:italic;text-align:center;margin-bottom:16px;}
+/* Post-answer explanation */
+.ex-explanation{background:var(--panel2);border:1px solid var(--bd);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--mu);line-height:1.6;margin-bottom:8px;}
+/* Pair exercise */
+.ex-pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:340px;margin:14px auto 0;}
+.ex-pair-col{display:flex;flex-direction:column;gap:8px;}
+.ex-pair-btn{background:linear-gradient(145deg,var(--panel),var(--panel2));border:2px solid var(--bd2);border-radius:14px;padding:14px 10px;font-family:'Scheherazade New',serif;font-size:36px;color:var(--gold-l);cursor:pointer;transition:all .22s;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);line-height:1.2;}
+.ex-pair-btn.name-btn{font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--tx);padding:14px 8px;}
+.ex-pair-btn.selected{border-color:var(--gold) !important;background:rgba(201,168,76,.1);transform:scale(1.04);}
+.ex-pair-btn.matched{border-color:#3daa7a !important;background:rgba(61,170,122,.12) !important;color:#3daa7a;pointer-events:none;}
+.ex-pair-btn.pair-wrong{animation:exShake .4s ease;border-color:rgba(200,80,80,.6) !important;}
+@media(max-width:400px){.ex-choices{gap:8px;} .ex-choice{font-size:38px;padding:14px 6px 10px;} .ex-target{font-size:70px;} .ex-pair-btn{font-size:28px;padding:10px 6px;} .ex-pair-btn.name-btn{font-size:11px;}}
 </style>
 </head>
 <body data-theme="dark">
@@ -663,7 +687,7 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 <div class="sec active" id="sec-lessons">
   <div class="lesson-hero">
     <div class="lesson-hero-title">📚 Apprends à lire l'arabe</div>
-    <div class="lesson-hero-sub">5 leçons · 15 lettres · Trace, écoute, mémorise !</div>
+    <div class="lesson-hero-sub">20 leçons · 29 lettres · Cours, écoute, trace, associe !</div>
   </div>
   <div class="lesson-map-wrap" id="lesson-map"></div>
 </div>
@@ -2881,18 +2905,136 @@ renderBadges; // called in showSec
 // ═══════════════════════════════════════════
 
 const LESSONS = [
-  {id:1, title:'Alif · Bā · Tā',    subtitle:'Tes premières lettres',  icon:'🌟', letters:['ا','ب','ت']},
-  {id:2, title:'Thā · Jīm · Ḥā',   subtitle:'Sons doux et gutturaux', icon:'🔥', letters:['ث','ج','ح']},
-  {id:3, title:'Khā · Dāl · Dhāl', subtitle:'Les non-connecteurs',     icon:'💫', letters:['خ','د','ذ']},
-  {id:4, title:'Rā · Zāy · Sīn',   subtitle:'Lettres fluides',        icon:'🌙', letters:['ر','ز','س']},
-  {id:5, title:'Shīn · Ṣād · Ḍād', subtitle:'Lettres pointées',       icon:'⭐', letters:['ش','ص','ض']},
+  {id:1, icon:'🌟', title:'Alif · Bā · Tā', subtitle:'Tes 3 premières lettres', letters:['ا','ب','ت'],
+   course:{title:'Les toutes premières lettres', lines:[
+    {ar:'ا', name:'Alif', ph:'[ā]', tip:"La plus simple : une ligne droite. Elle ne se prononce pas seule — elle porte les voyelles et allonge le 'â'."},
+    {ar:'ب', name:'Bā', ph:'[b]', tip:"Une barque avec 1 point EN-DESSOUS. Retiens : Bā = Bateau ! Elle partage sa forme avec Tā et Thā."},
+    {ar:'ت', name:'Tā', ph:'[t]', tip:"Même forme que Bā mais avec 2 points AU-DESSUS. 1 point = Bā, 2 points = Tā !"},
+   ]}},
+  {id:2, icon:'🔥', title:'Thā · Jīm · Ḥā', subtitle:'Sons doux et gutturaux', letters:['ث','ج','ح'],
+   course:{title:'Nouveaux sons', lines:[
+    {ar:'ث', name:'Thā', ph:'[th]', tip:"Même base que Bā mais 3 points AU-DESSUS. Le 'th' anglais de 'three'. Retiens : 3 points = Thā."},
+    {ar:'ج', name:'Jīm', ph:'[dj]', tip:"Courbe en crochet avec 1 point SOUS la courbe. Comme 'dj' dans djellaba. Le Jīm ressemble à un hameçon."},
+    {ar:'ح', name:'Ḥā', ph:'[ḥ]', tip:"Même base que Jīm mais SANS point. Son gutturale — souffle chaud du fond de la gorge."},
+   ]}},
+  {id:3, icon:'💫', title:'Khā · Dāl · Dhāl', subtitle:'Les non-connecteurs', letters:['خ','د','ذ'],
+   course:{title:'Lettres qui ne se connectent pas à droite', lines:[
+    {ar:'خ', name:'Khā', ph:'[kh]', tip:"Ḥā + 1 point AU-DESSUS. Le 'kh' de 'khouya' ou du 'Bach' allemand."},
+    {ar:'د', name:'Dāl', ph:'[d]', tip:"Petite courbe angulaire. Non-connecteur — elle ne rejoint jamais la lettre suivante !"},
+    {ar:'ذ', name:'Dhāl', ph:'[dh]', tip:"Dāl + 1 point au-dessus. Non-connecteur aussi. Son 'dh' comme 'the' anglais."},
+   ]}},
+  {id:4, icon:'🌙', title:'Rā · Zāy · Sīn', subtitle:'Courbes et dents de scie', letters:['ر','ز','س'],
+   course:{title:'Lettres fluides', lines:[
+    {ar:'ر', name:'Rā', ph:'[r]', tip:"Grande courbe descendante. Non-connecteur. Le r légèrement roulé."},
+    {ar:'ز', name:'Zāy', ph:'[z]', tip:"Rā + 1 point au-dessus. Même forme, son différent. Non-connecteur aussi."},
+    {ar:'س', name:'Sīn', ph:'[s]', tip:"Trois petites dents horizontales sans points. Retiens : Sīn = 3 bosses comme une vague."},
+   ]}},
+  {id:5, icon:'⭐', title:'Shīn · Ṣād · Ḍād', subtitle:'Pointées et emphatiques', letters:['ش','ص','ض'],
+   course:{title:'Lettres fortes', lines:[
+    {ar:'ش', name:'Shīn', ph:'[sh]', tip:"Sīn + 3 points au-dessus. Le 'ch' de 'chat'. 3 bosses + 3 points !"},
+    {ar:'ص', name:'Ṣād', ph:'[ṣ]', tip:"Lettre EMPHATIQUE. La langue touche le palais arrière, le son est grave et lourd."},
+    {ar:'ض', name:'Ḍād', ph:'[ḍ]', tip:"Unique à l'arabe ! Lourd et profond. L'arabe est parfois appelé 'langue du Ḍād'."},
+   ]}},
+  {id:6, icon:'🌿', title:'Ṭā · Ẓā · ʿAyn', subtitle:'Gutturales et emphatiques', letters:['ط','ظ','ع'],
+   course:{title:'Les sons les plus uniques', lines:[
+    {ar:'ط', name:'Ṭā', ph:'[ṭ]', tip:"Un cercle fermé avec une hampe verticale. Emphatique — son lourd et grave."},
+    {ar:'ظ', name:'Ẓā', ph:'[ẓ]', tip:"Ṭā + 1 point au-dessus. Emphatique. Rare mais important dans le Coran."},
+    {ar:'ع', name:'ʿAyn', ph:"[ʿ]", tip:"Son UNIQUE à l'arabe ! Contraction du pharynx profond. Pas d'équivalent en français — entraîne-toi !"},
+   ]}},
+  {id:7, icon:'✨', title:'Ghayn · Fā · Qāf', subtitle:'Gutturaux et labiaux', letters:['غ','ف','ق'],
+   course:{title:'Sons du fond de la bouche', lines:[
+    {ar:'غ', name:'Ghayn', ph:'[gh]', tip:"ʿAyn + 1 point. Comme le 'r' grasseyé parisien — vibration au fond de la gorge."},
+    {ar:'ف', name:'Fā', ph:'[f]', tip:"Un cercle avec 1 point AU-DESSUS et une queue. Retiens : Fā = F de Flûte."},
+    {ar:'ق', name:'Qāf', ph:'[q]', tip:"2 points au-dessus. Son uvulaire — encore plus profond que Kāf."},
+   ]}},
+  {id:8, icon:'🎯', title:'Kāf · Lām · Mīm', subtitle:'Très fréquentes', letters:['ك','ل','م'],
+   course:{title:'Lettres du quotidien', lines:[
+    {ar:'ك', name:'Kaf', ph:'[k]', tip:"Courbe avec une petite marque interne. Très fréquente dans كِتَاب (livre), مَلَك (ange)."},
+    {ar:'ل', name:'Lam', ph:'[l]', tip:"Grande courbe ascendante. Ligature obligatoire : لا (Lām + Alif) toujours liés."},
+    {ar:'م', name:'Mim', ph:'[m]', tip:"Petit cercle fermé avec une queue. Présent dans مَاء (eau), مُسْلِم, مُحَمَّد !"},
+   ]}},
+  {id:9, icon:'💎', title:'Nūn · Hā · Wāw', subtitle:'Les dernières de base', letters:['ن','ه','و'],
+   course:{title:'Presque fini !', lines:[
+    {ar:'ن', name:'Nun', ph:'[n]', tip:"Cuvette ouverte avec 1 point AU-DESSUS. Retiens : Nūn = bol avec un point."},
+    {ar:'ه', name:'Ha (هاء)', ph:'[h]', tip:"Forme très variable selon sa position. Souffle léger, comme le 'h' anglais."},
+    {ar:'و', name:'Waw', ph:'[w / û]', tip:"Non-connecteur. Sert aussi de voyelle longue 'û'. Ex : وَاحِد (un), رَسُول (messager)."},
+   ]}},
+  {id:10, icon:'🏆', title:'Yā · Hamza · Wāw revu', subtitle:'Compléter l\'alphabet', letters:['ي','ء','و'],
+   course:{title:'Les dernières lettres + le ة', lines:[
+    {ar:'ي', name:'Ya', ph:'[y / î]', tip:"2 points EN-DESSOUS. Très fréquente ! Sert aussi de voyelle longue 'î'. Ex : يَوْم (jour)."},
+    {ar:'ء', name:'Hamza', ph:"[ʾ]", tip:"Coup de glotte. Peut s'écrire seule (ء) ou sur assise (أ إ ئ ؤ آ). Ex : أَكَل (il a mangé)."},
+    {ar:'ة', name:'Tā Marbūṭa', ph:'[a/at]', tip:"Ta 'fermée' — seulement en fin de mot féminin. Ex : مَدْرَسَة = 'a' en pause, 'at' en lecture liée."},
+   ]}},
+  {id:11, icon:'🔗', title:'Formes des lettres', subtitle:'Initiale · médiale · finale', letters:['ب','ع','ن'],
+   course:{title:'Une lettre, 4 visages', lines:[
+    {ar:'بـ ـبـ ـب', name:'Bā — 3 formes', ph:'', tip:"Au début : بـ | Au milieu : ـبـ | À la fin : ـب. La queue change de côté !"},
+    {ar:'عـ ـعـ ـع', name:'ʿAyn — 3 formes', ph:'', tip:"ʿAyn change beaucoup ! عِلْم (début) → يَعْلَم (milieu) → سَمَع (fin)."},
+    {ar:'ر د ا و ز', name:'Non-connecteurs — 2 formes seulement', ph:'', tip:"Ces lettres n'ont PAS de forme médiale — elles ne se connectent qu'à gauche."},
+   ]}},
+  {id:12, icon:'☀️', title:'Solaires & Lunaires', subtitle:'Le secret du ال', letters:['ش','ر','ل'],
+   course:{title:"L'article défini ال", lines:[
+    {ar:'الشَّمْس', name:"Lettre solaire → Ash-shams", ph:'', tip:"14 lettres SOLAIRES : le ل de ال est assimilé. الشَّمْس = 'ash-shams' (pas 'al-shams')."},
+    {ar:'القَمَر', name:"Lettre lunaire → Al-qamar", ph:'', tip:"14 lettres LUNAIRES : le ل de ال reste audible. القَمَر = 'al-qamar'. Le ل se prononce."},
+    {ar:'ت ث د ذ ر ز س ش ص ض ط ظ ل ن', name:'Les 14 solaires', ph:'', tip:"Ces 14 lettres assimilent le ال. Les 14 restantes (ب ج ح خ ع غ ف ق ك م ه و ي ا) sont lunaires."},
+   ]}},
+  {id:13, icon:'🎵', title:'Harakat — Voyelles', subtitle:'Fatha · Kasra · Damma', letters:['ف','م','ك'],
+   course:{title:'Lire avec les voyelles courtes', lines:[
+    {ar:'بَ بِ بُ', name:'Fatha · Kasra · Damma', ph:'[a] [i] [u]', tip:"Fatha (barre au-dessus) = 'a'. Kasra (barre dessous) = 'i'. Damma (petit waw au-dessus) = 'ou'."},
+    {ar:'بْ', name:'Sukun — pas de voyelle', ph:'(consonne seule)', tip:"Cercle au-dessus = consonne 'fermée', pas de voyelle. Ex : مَسْجِد = mas-jid (le s est fermé)."},
+    {ar:'بّ', name:'Shadda — doublement', ph:'(×2)', tip:"Le signe ّ au-dessus = lettre DOUBLÉE. Ex : رَبّ = rab-ba. Important dans le Coran !"},
+   ]}},
+  {id:14, icon:'🌊', title:'Madd — Allongement', subtitle:'Voyelles longues', letters:['ا','و','ي'],
+   course:{title:'Étirer les sons — 2 temps', lines:[
+    {ar:'بَا', name:'Madd Alif', ph:'[â — long]', tip:"Fatha + Alif = 'â' long (2 temps). Ex : قَالَ (qāla), كِتَاب (kitāb). Le Alif s'entend !"},
+    {ar:'بُو', name:'Madd Wāw', ph:'[û — long]', tip:"Damma + Wāw sâkin = 'û' long. Ex : رَسُول (rasûl), نُور (nûr). Le Wāw s'entend !"},
+    {ar:'بِي', name:'Madd Yā', ph:'[î — long]', tip:"Kasra + Yā sâkin = 'î' long. Ex : كَرِيم (karîm), رَحِيم (rahîm). Le Yā s'entend !"},
+   ]}},
+  {id:15, icon:'✍️', title:'Tanwīn', subtitle:'Terminaisons -an · -in · -un', letters:['ت','ن','م'],
+   course:{title:'Le Tanwīn — nunation', lines:[
+    {ar:'بً', name:'Tanwīn Fatḥ', ph:'[-an]', tip:"Double Fatha = terminaison '-an'. Ex : كِتَاباً = kitāban. Souvent accompagné d'un Alif final."},
+    {ar:'بٍ', name:'Tanwīn Kasr', ph:'[-in]', tip:"Double Kasra = terminaison '-in'. Ex : رَجُلٍ = rajulin."},
+    {ar:'بٌ', name:'Tanwīn Ḍamm', ph:'[-un]', tip:"Double Damma = terminaison '-un'. Ex : بَيْتٌ = baytun. Correspond souvent au sujet."},
+   ]}},
+  {id:16, icon:'🕌', title:'La Basmala', subtitle:'بِسْمِ اللهِ الرَّحْمَنِ الرَّحِيمِ', letters:['ب','س','م'],
+   course:{title:'Analyse de la Basmala', lines:[
+    {ar:'بِسْمِ', name:"Bismi — «au nom de»", ph:'', tip:"بِ (bi) + سْمِ (smi). Le ا de اسم est supprimé après la préposition. Kasra sous le ب."},
+    {ar:'اللهِ', name:'Allāhi', ph:'', tip:"Le nom d'Allah. Lam + Lam Shadda + Hā. Après une Fatha, on prononce 'ALLAH' avec la gorge ouverte (Tafkhim)."},
+    {ar:'الرَّحْمَنِ الرَّحِيمِ', name:'Ar-Raḥmān Ar-Raḥīm', ph:'', tip:"'Le Tout-Miséricordieux, le Très-Miséricordieux'. Rā avec Shadda = rr long. Lettre solaire Rā assimile le ال."},
+   ]}},
+  {id:17, icon:'📖', title:'Al-Fatiha', subtitle:'Sourate Ouverture — 7 versets', letters:['ا','ل','ح'],
+   course:{title:'La mère du Coran', lines:[
+    {ar:'الحَمْدُ لِلَّهِ', name:'V.2 — Al-hamdu lillāh', ph:'', tip:"'Louange à Allah'. الحَمد = al-ḥamd (ḥ lettre lunaire, ل prononcé). Récité dans chaque rakaa de la prière."},
+    {ar:'الصِّرَاطَ المُسْتَقِيمَ', name:'V.6 — Le chemin droit', ph:'', tip:"Ṣād = lettre solaire, assimile le ال = aṣ-ṣirāṭ. المُسْتَقِيم : Mīm+Sin+Tā+Qāf+Yā+Mīm."},
+    {ar:'آمِين', name:"Āmīn — après la Fatiha", ph:'[āmîn]', tip:"Récité après Al-Fatiha. Alif Madda (ā) + Mīm + Yā + Nūn. Signifie 'Exauce notre prière !'."},
+   ]}},
+  {id:18, icon:'🔄', title:'Révision I', subtitle:'Lettres souvent confondues', letters:['ث','خ','ذ','ظ','ض'],
+   course:{title:'Les lettres difficiles', lines:[
+    {ar:'ب ت ث', name:'1 / 2 / 3 points', ph:'', tip:"Même base ! ب = 1 point dessous. ت = 2 points dessus. ث = 3 points dessus. Compte les points !"},
+    {ar:'ح ج خ', name:'Sans / dessous / dessus', ph:'', tip:"ح (aucun point). ج (1 point DESSOUS). خ (1 point DESSUS). La base est identique — seuls les points changent."},
+    {ar:'ص ض ط ظ', name:'4 emphatiques', ph:'', tip:"Lettres lourdes. ص et ض partagent une base. ط et ظ aussi. La clé : les points au-dessus pour ض et ظ."},
+   ]}},
+  {id:19, icon:'⚡', title:'Révision II', subtitle:'Spéciales & connexions', letters:['ص','ع','غ','ق','ء'],
+   course:{title:'Consolide tes acquis', lines:[
+    {ar:'لا', name:'Ligature Lām-Alif obligatoire', ph:'', tip:"لا est une ligature OBLIGATOIRE. Ne s'écrit jamais ل + ا séparément dans un mot arabe."},
+    {ar:'أ إ آ ئ ؤ ء', name:"Les formes de la Hamza", ph:'', tip:"Au début : أ (fatha/damma) ou إ (kasra). Au milieu : sur assise selon voyelle. À la fin : ء ou ئ."},
+    {ar:'ة', name:'Tā Marbūṭa — rappel', ph:'[a] / [at]', tip:"Toujours en fin de mot. En pause = 'a'. En lecture continue = 'at'. Ex : صَلَاة = ṣalāh (pause) ou ṣalāt (continu)."},
+   ]}},
+  {id:20, icon:'🥇', title:'Test Final', subtitle:'Toutes les lettres !', letters:['ث','ع','غ','ق','ء'],
+   course:{title:'Tu as tout appris !', lines:[
+    {ar:'أَلِف بَاء', name:'29 lettres maîtrisées !', ph:'', tip:"Tu as étudié les 29 lettres, les formes, les voyelles, la Basmala et Al-Fatiha. Félicitations !"},
+    {ar:'إِقْرَأْ', name:"«Lis !» — premier mot révélé", ph:'[iqraʾ]', tip:"Le premier mot révélé au Prophète ﷺ. Tu sais maintenant pourquoi on dit que l'arabe est la langue du Coran."},
+    {ar:'بِسْمِ اللهِ', name:'Commence par la Basmala', ph:'', tip:"Prononce mentalement بِسْمِ اللهِ الرَّحْمَنِ الرَّحِيمِ avant chaque tâche noble. C'est la Sunna !"},
+   ]}},
 ];
-const ALL_LES_LETTERS = LESSONS.flatMap(l=>l.letters);
+
+const ALL_LES_LETTERS = [...new Set(LESSONS.flatMap(l=>l.letters))];
 
 // État courant d'une leçon
 let _les=null, _lesExList=[], _lesExIdx=0, _lesMistakes=0, _lesAnswered=false;
 let _lesCtx=null, _lesHasDrawn=false;
+let _lesPairSelLetter=null, _lesPairSelName=null;
 
+// ── Carte de progression ──
 function renderLessons(){
   const el=document.getElementById('lesson-map');
   if(!el) return;
@@ -2904,8 +3046,8 @@ function renderLessons(){
     const bubbleCls=done?'done':locked?'locked':'';
     const cardCls=done?'done':locked?'locked':'';
     const click=locked
-      ? `showToast('Termine la leçon ${i} d\\'abord !')`
-      : `startLesson(${les.id})`;
+      ?`showToast('Termine la leçon ${i} d\\'abord !')`
+      :`startLesson(${les.id})`;
     const badge=done?`<span class="lesson-node-badge">✓ Terminée</span>`:'';
     return `<div class="lesson-node-card ${cardCls}" onclick="${click}">
       <div class="lesson-bubble ${bubbleCls}">
@@ -2921,15 +3063,26 @@ function renderLessons(){
   }).join('');
 }
 
+// ── Construire la liste d'exercices ──
+function _buildExercises(les){
+  const exs=[];
+  exs.push({type:'course',lesson:les});
+  les.letters.forEach(letter=>{
+    exs.push({type:'name',letter});
+    exs.push({type:'listen',letter});
+    exs.push({type:'trace',letter});
+  });
+  const pl=les.letters.slice(0,3);
+  if(pl.length>=2) exs.push({type:'pair',letters:pl});
+  return exs;
+}
+
+// ── Démarrer une leçon ──
 function startLesson(id){
   _les=LESSONS.find(l=>l.id===id); if(!_les) return;
   _lesMistakes=0; _lesExIdx=0; _lesAnswered=false; _lesHasDrawn=false;
-  // Construire la liste d'exercices : listen puis trace pour chaque lettre
-  _lesExList=[];
-  _les.letters.forEach(letter=>{
-    _lesExList.push({type:'listen',letter});
-    _lesExList.push({type:'trace',letter});
-  });
+  _lesPairSelLetter=null; _lesPairSelName=null;
+  _lesExList=_buildExercises(_les);
   const modal=document.getElementById('lesson-modal');
   modal.style.display='flex';
   document.body.style.overflow='hidden';
@@ -2945,7 +3098,9 @@ function closeLessonModal(){
 }
 
 function _updateLessonHeader(){
-  const pct=(_lesExIdx/_lesExList.length)*100;
+  const scored=_lesExList.filter(e=>e.type!=='course');
+  const done=_lesExList.slice(0,_lesExIdx).filter(e=>e.type!=='course').length;
+  const pct=scored.length?((done/scored.length)*100):0;
   const fill=document.getElementById('lm-prog-fill');
   if(fill) fill.style.width=pct+'%';
   const h=Math.max(0,3-_lesMistakes);
@@ -2956,31 +3111,73 @@ function _updateLessonHeader(){
 function showLessonExercise(){
   _updateLessonHeader();
   _lesAnswered=false; _lesHasDrawn=false;
+  _lesPairSelLetter=null; _lesPairSelName=null;
   const ex=_lesExList[_lesExIdx];
-  if(ex.type==='listen') _renderExListen(ex.letter);
-  else _renderExTrace(ex.letter);
+  if(ex.type==='course')  _renderExCourse(ex.lesson);
+  else if(ex.type==='name')   _renderExName(ex.letter);
+  else if(ex.type==='listen') _renderExListen(ex.letter);
+  else if(ex.type==='trace')  _renderExTrace(ex.letter);
+  else if(ex.type==='pair')   _renderExPair(ex.letters);
 }
 
-// ── Type A : Écouter → trouver la lettre ──
-function _renderExListen(letter){
-  const ld=LETTERS.find(l=>l.ar===letter)||{ph:'',name:''};
-  // 4 choix : correct + 3 aléatoires parmi toutes les lettres des leçons
-  const pool=ALL_LES_LETTERS.filter(l=>l!==letter).sort(()=>Math.random()-.5).slice(0,3);
-  const choices=[letter,...pool].sort(()=>Math.random()-.5);
+// ── Type 0 : Mini-cours introductif ──
+function _renderExCourse(les){
+  const body=document.getElementById('lm-body');
+  const lines=les.course.lines.map(l=>`
+    <div class="ex-course-row">
+      <div class="ex-course-ar">${l.ar}</div>
+      <div class="ex-course-info">
+        <div class="ex-course-name">${l.name}${l.ph?` <span class="ex-course-ph">${l.ph}</span>`:''}</div>
+        <div class="ex-course-tip">${l.tip}</div>
+      </div>
+    </div>`).join('');
+  body.innerHTML=`
+    <div class="ex-course-card">
+      <div class="ex-course-badge">📚 Mini-cours</div>
+      <div class="ex-course-title">${les.course.title}</div>
+      ${lines}
+    </div>
+    <button class="ex-next-btn" style="margin-top:18px;" onclick="nextLessonEx()">Commencer les exercices →</button>`;
+}
+
+// ── Pool de choix aléatoires ──
+function _getPool(correct){
+  const pool=ALL_LES_LETTERS.filter(l=>l!==correct).sort(()=>Math.random()-.5).slice(0,3);
+  return [correct,...pool].sort(()=>Math.random()-.5);
+}
+
+// ── Type 1 : Voir le nom → trouver la lettre ──
+function _renderExName(letter){
+  const ld=LETTERS.find(l=>l.ar===letter)||{name:'?',ph:''};
+  const choices=_getPool(letter);
   const body=document.getElementById('lm-body');
   body.innerHTML=`
-    <div class="ex-instruction">🔊 Quelle lettre entends-tu ?<br><span style="font-size:12px;color:var(--mu);font-weight:400;">Appuie d'abord sur Écouter</span></div>
-    <button class="ex-play-btn" id="ex-play-btn" onclick="playLessonAudio('${letter}')">🔊 Écouter</button>
+    <div class="ex-instruction">✍️ Quelle lettre correspond à…</div>
+    <span class="ex-name-target">${ld.name}</span>
+    <span class="ex-name-ph">${ld.ph||''}</span>
     <div class="ex-choices">
-      ${choices.map(c=>{
-        const cd=LETTERS.find(l=>l.ar===c)||{ph:''};
-        return `<button class="ex-choice" id="exc-${c}" onclick="answerListen('${c}','${letter}')">
-          ${c}<span class="ex-choice-ph">${cd.ph||''}</span>
-        </button>`;
+      ${choices.map(c=>{const cd=LETTERS.find(l=>l.ar===c)||{ph:''};
+        return `<button class="ex-choice" data-ar="${c}" onclick="answerChoice('${c}','${letter}')">
+          ${c}<span class="ex-choice-ph">${cd.ph||''}</span></button>`;
       }).join('')}
     </div>
     <div id="ex-feedback-wrap" class="ex-feedback-wrap"></div>`;
-  // Lecture auto après 500ms
+}
+
+// ── Type 2 : Écouter → trouver la lettre ──
+function _renderExListen(letter){
+  const choices=_getPool(letter);
+  const body=document.getElementById('lm-body');
+  body.innerHTML=`
+    <div class="ex-instruction">🔊 Quelle lettre entends-tu ?<br><span style="font-size:12px;color:var(--mu)">Appuie pour écouter</span></div>
+    <button class="ex-play-btn" id="ex-play-btn" onclick="playLessonAudio('${letter}')">🔊 Écouter</button>
+    <div class="ex-choices">
+      ${choices.map(c=>{const cd=LETTERS.find(l=>l.ar===c)||{ph:''};
+        return `<button class="ex-choice" data-ar="${c}" onclick="answerChoice('${c}','${letter}')">
+          ${c}<span class="ex-choice-ph">${cd.ph||''}</span></button>`;
+      }).join('')}
+    </div>
+    <div id="ex-feedback-wrap" class="ex-feedback-wrap"></div>`;
   setTimeout(()=>playLessonAudio(letter),500);
 }
 
@@ -2990,40 +3187,37 @@ function playLessonAudio(letter){
   playLetter(letter);
 }
 
-function answerListen(chosen, correct){
+// ── Réponse commune (types 1 & 2) ──
+function answerChoice(chosen,correct){
   if(_lesAnswered) return;
   _lesAnswered=true;
-  // Désactiver tous les boutons
-  document.querySelectorAll('.ex-choice').forEach(b=>b.style.pointerEvents='none');
+  document.querySelectorAll('.ex-choice').forEach(b=>{
+    b.style.pointerEvents='none';
+    if(b.dataset.ar===chosen) b.classList.add(chosen===correct?'correct':'wrong');
+    if(chosen!==correct && b.dataset.ar===correct) b.classList.add('correct');
+  });
   const ok=chosen===correct;
-  const btn=document.getElementById('exc-'+chosen);
+  const ld=LETTERS.find(l=>l.ar===correct)||{name:'',ph:'',desc:''};
   const fb=document.getElementById('ex-feedback-wrap');
   if(ok){
-    if(btn) btn.classList.add('correct');
-    if(fb) fb.innerHTML=`<div class="ex-fb ok">✓ Excellent ! C'est <strong style="font-family:'Scheherazade New',serif;font-size:20px;">${correct}</strong></div>`;
     playLetter(correct);
+    if(fb) fb.innerHTML=`<div class="ex-fb ok">✓ Exact ! <strong style="font-family:'Scheherazade New',serif;font-size:22px;">${correct}</strong> = ${ld.name} ${ld.ph}</div>
+      ${ld.desc?`<div class="ex-explanation">💡 ${ld.desc}</div>`:''}`;
   } else {
-    if(btn) btn.classList.add('wrong');
-    const cbtn=document.getElementById('exc-'+correct);
-    if(cbtn) cbtn.classList.add('correct');
-    if(fb) fb.innerHTML=`<div class="ex-fb err">✗ C'était <strong style="font-family:'Scheherazade New',serif;font-size:20px;">${correct}</strong></div>`;
     _lesMistakes++; _updateLessonHeader();
+    if(fb) fb.innerHTML=`<div class="ex-fb err">✗ C'était <strong style="font-family:'Scheherazade New',serif;font-size:22px;">${correct}</strong> — ${ld.name} ${ld.ph}</div>
+      ${ld.desc?`<div class="ex-explanation">💡 Rappel : ${ld.desc}</div>`:''}`;
   }
-  if(fb){
-    const nb=document.createElement('button');
-    nb.className='ex-next-btn'; nb.style.marginTop='12px';
-    nb.textContent=_lesExIdx+1>=_lesExList.length?'Terminer 🎉':'Continuer →';
-    nb.onclick=nextLessonEx;
-    fb.appendChild(nb);
-  }
+  if(fb){const nb=document.createElement('button');nb.className='ex-next-btn';nb.style.marginTop='12px';
+    nb.textContent=_lesExIdx+1>=_lesExList.length?'Terminer 🎉':'Continuer →';nb.onclick=nextLessonEx;fb.appendChild(nb);}
 }
 
-// ── Type B : Voir la lettre → tracer → entendre ──
+// ── Type 3 : Tracer la lettre ──
 function _renderExTrace(letter){
   const ld=LETTERS.find(l=>l.ar===letter)||{name:'',ph:''};
   const body=document.getElementById('lm-body');
   body.innerHTML=`
-    <div class="ex-instruction">✏️ Trace cette lettre par-dessus<br><span style="font-size:12px;color:var(--mu);font-weight:400;">Dessine avec le doigt ou la souris</span></div>
+    <div class="ex-instruction">✏️ Trace cette lettre par-dessus<br><span style="font-size:12px;color:var(--mu);font-weight:400">Dessine avec le doigt ou la souris</span></div>
     <div class="ex-target">${letter}</div>
     <div class="ex-target-sub">${ld.name} ${ld.ph}</div>
     <div class="ex-canvas-wrap" id="les-cwrap">
@@ -3035,10 +3229,10 @@ function _renderExTrace(letter){
     </div>
     <div id="ex-feedback-wrap" class="ex-feedback-wrap" style="margin-top:12px;"></div>
     <button class="ex-continue-btn" id="ex-cont-btn" onclick="_traceNext('${letter}')">Valider et écouter →</button>`;
-  _initLesCanvas(letter);
+  _initLesCanvas();
 }
 
-function _initLesCanvas(letter){
+function _initLesCanvas(){
   const wrap=document.getElementById('les-cwrap');
   const canvas=document.getElementById('lesson-canvas');
   if(!canvas||!wrap) return;
@@ -3048,10 +3242,10 @@ function _initLesCanvas(letter){
   _lesCtx.strokeStyle='#C9A84C'; _lesCtx.lineWidth=7;
   _lesCtx.lineCap='round'; _lesCtx.lineJoin='round';
   let drawing=false;
-  const gp=e=>{const r=canvas.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*(canvas.width/r.width),y:(t.clientY-r.top)*(canvas.height/r.height)};};
+  const gp=e=>{const r=canvas.getBoundingClientRect();const t=e.touches?e.touches[0]:e;
+    return{x:(t.clientX-r.left)*(canvas.width/r.width),y:(t.clientY-r.top)*(canvas.height/r.height)};};
   const start=e=>{e.preventDefault();drawing=true;const p=gp(e);_lesCtx.beginPath();_lesCtx.moveTo(p.x,p.y);
-    if(!_lesHasDrawn){_lesHasDrawn=true;wrap.classList.add('inking');_activateContinueBtn();}
-  };
+    if(!_lesHasDrawn){_lesHasDrawn=true;wrap.classList.add('inking');_activateContinueBtn();}};
   const move=e=>{if(!drawing)return;e.preventDefault();const p=gp(e);_lesCtx.lineTo(p.x,p.y);_lesCtx.stroke();};
   const end=()=>{drawing=false;};
   canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);canvas.addEventListener('mouseup',end);
@@ -3065,43 +3259,105 @@ function _activateContinueBtn(){
 
 function _clearLesCanvas(){
   const canvas=document.getElementById('lesson-canvas');
-  if(_lesCtx&&canvas){_lesCtx.clearRect(0,0,canvas.width,canvas.height);_lesHasDrawn=false;const w=document.getElementById('les-cwrap');if(w)w.classList.remove('inking');const b=document.getElementById('ex-cont-btn');if(b)b.classList.remove('ready');}
+  if(_lesCtx&&canvas){_lesCtx.clearRect(0,0,canvas.width,canvas.height);_lesHasDrawn=false;
+    const w=document.getElementById('les-cwrap');if(w)w.classList.remove('inking');
+    const b=document.getElementById('ex-cont-btn');if(b)b.classList.remove('ready');}
 }
 
 function _traceNext(letter){
+  const ld=LETTERS.find(l=>l.ar===letter)||{desc:''};
   const fb=document.getElementById('ex-feedback-wrap');
-  if(fb) fb.innerHTML=`<div class="ex-fb ok">🔊 Écoute le son de la lettre !</div>`;
+  if(fb) fb.innerHTML=`<div class="ex-fb ok">🔊 Écoute le son de la lettre !</div>
+    ${ld.desc?`<div class="ex-explanation">💡 ${ld.desc}</div>`:''}`;
   const btn=document.getElementById('ex-cont-btn');
   if(btn) btn.style.display='none';
   playLetter(letter);
-  setTimeout(()=>{
-    const nb=document.createElement('button');
-    nb.className='ex-next-btn'; nb.style.marginTop='10px';
-    nb.textContent=_lesExIdx+1>=_lesExList.length?'Terminer 🎉':'Continuer →';
-    nb.onclick=nextLessonEx;
-    if(fb) fb.appendChild(nb);
-  },1100);
+  setTimeout(()=>{const nb=document.createElement('button');nb.className='ex-next-btn';nb.style.marginTop='10px';
+    nb.textContent=_lesExIdx+1>=_lesExList.length?'Terminer 🎉':'Continuer →';nb.onclick=nextLessonEx;
+    if(fb)fb.appendChild(nb);},1100);
 }
 
+// ── Type 4 : Associer lettres ↔ noms ──
+function _renderExPair(letters){
+  const pairL=letters.slice(0,3);
+  const shuffL=[...pairL].sort(()=>Math.random()-.5);
+  const names=pairL.map(l=>(LETTERS.find(x=>x.ar===l)||{name:'?'}).name);
+  const shuffN=[...names].sort(()=>Math.random()-.5);
+  const body=document.getElementById('lm-body');
+  _lesPairSelLetter=null; _lesPairSelName=null;
+  body.innerHTML=`
+    <div class="ex-instruction">🔗 Associe chaque lettre à son nom<br><span style="font-size:12px;color:var(--mu)">Tape une lettre puis un nom</span></div>
+    <div class="ex-pair-grid">
+      <div class="ex-pair-col">
+        ${shuffL.map(l=>`<button class="ex-pair-btn ex-pair-letter" data-ar="${l}" onclick="_pairSelect(this,'letter')">${l}</button>`).join('')}
+      </div>
+      <div class="ex-pair-col">
+        ${shuffN.map(n=>`<button class="ex-pair-btn ex-pair-name name-btn" data-name="${n}" onclick="_pairSelect(this,'name')">${n}</button>`).join('')}
+      </div>
+    </div>
+    <div id="ex-feedback-wrap" class="ex-feedback-wrap" style="margin-top:16px;"></div>`;
+}
+
+function _pairSelect(btn,type){
+  if(btn.classList.contains('matched')) return;
+  if(type==='letter'){
+    document.querySelectorAll('.ex-pair-letter').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected'); _lesPairSelLetter=btn;
+  } else {
+    document.querySelectorAll('.ex-pair-name').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected'); _lesPairSelName=btn;
+  }
+  if(_lesPairSelLetter&&_lesPairSelName) _checkPair();
+}
+
+function _checkPair(){
+  const lBtn=_lesPairSelLetter, nBtn=_lesPairSelName;
+  _lesPairSelLetter=null; _lesPairSelName=null;
+  const letter=lBtn.dataset.ar, name=nBtn.dataset.name;
+  const ld=LETTERS.find(l=>l.ar===letter);
+  const ok=ld&&ld.name===name;
+  if(ok){
+    lBtn.classList.add('matched'); lBtn.classList.remove('selected');
+    nBtn.classList.add('matched'); nBtn.classList.remove('selected');
+    playLetter(letter);
+    const total=document.querySelectorAll('.ex-pair-letter').length;
+    const matched=document.querySelectorAll('.ex-pair-letter.matched').length;
+    if(matched>=total){
+      setTimeout(()=>{
+        const fb=document.getElementById('ex-feedback-wrap');
+        if(fb){fb.innerHTML=`<div class="ex-fb ok">✓ Parfait ! Toutes les paires trouvées !</div>`;
+          const nb=document.createElement('button');nb.className='ex-next-btn';nb.style.marginTop='12px';
+          nb.textContent=_lesExIdx+1>=_lesExList.length?'Terminer 🎉':'Continuer →';nb.onclick=nextLessonEx;fb.appendChild(nb);}
+      },400);
+    }
+  } else {
+    lBtn.classList.add('pair-wrong'); nBtn.classList.add('pair-wrong');
+    _lesMistakes++; _updateLessonHeader();
+    setTimeout(()=>{lBtn.classList.remove('selected','pair-wrong');nBtn.classList.remove('selected','pair-wrong');},600);
+  }
+}
+
+// ── Avancer ──
 function nextLessonEx(){
   _lesExIdx++;
   if(_lesExIdx>=_lesExList.length){_showLessonResult();return;}
   showLessonExercise();
 }
 
+// ── Résultat final ──
 function _showLessonResult(){
-  const stars=_lesMistakes===0?3:_lesMistakes<=2?2:1;
+  const stars=_lesMistakes===0?3:_lesMistakes<=3?2:1;
   if(!ST.lessonStars) ST.lessonStars={};
   ST.lessonStars[_les.id]=Math.max(ST.lessonStars[_les.id]||0,stars);
   const xp=stars*10; addXP(xp); save();
-  // Compléter la barre
   const fill=document.getElementById('lm-prog-fill');
   if(fill) fill.style.width='100%';
   const body=document.getElementById('lm-body');
+  const msg=stars===3?'Parfait, aucune erreur !':stars===2?'Très bien, continue !':'Entraîne-toi encore !';
   body.innerHTML=`
     <div class="lesson-result">
       <div class="lr-ar">أَحْسَنْتَ !</div>
-      <div class="lr-msg">Leçon terminée ! ${stars===3?'Parfait, zéro erreur !':stars===2?'Très bien !':'Continue à t\'entraîner !'}</div>
+      <div class="lr-msg">${msg}</div>
       <div class="lr-stars">
         <span class="lr-star" id="lrs1">${1<=stars?'⭐':'⬜'}</span>
         <span class="lr-star" id="lrs2">${2<=stars?'⭐':'⬜'}</span>
@@ -3110,7 +3366,6 @@ function _showLessonResult(){
       <div class="lr-xp">+${xp} XP gagnés 🎉</div>
       <button class="btn-g" style="width:100%;padding:14px;" onclick="closeLessonModal()">Continuer →</button>
     </div>`;
-  // Animation étoiles
   [1,2,3].forEach(n=>{setTimeout(()=>{const el=document.getElementById('lrs'+n);if(el)el.classList.add('show');},280+n*260);});
 }
 

@@ -438,6 +438,83 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 .ayah-sbtn.active[data-s=learning]{border-color:#3daa7a;color:#3daa7a;background:rgba(61,170,122,.12);}
 .ayah-sbtn.active[data-s=done]{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.12);}
 @media(max-width:480px){.reciter-grid{grid-template-columns:1fr 1fr;}}
+
+/* ══════════════════════════════════════
+   LEÇONS — CARTE DE PROGRESSION
+══════════════════════════════════════ */
+.lesson-hero{background:linear-gradient(135deg,var(--panel),var(--panel2));border:1px solid var(--bd2);border-radius:20px;padding:22px 20px 18px;margin-bottom:26px;text-align:center;position:relative;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.08);}
+.lesson-hero::before{content:'تَعَلَّم';position:absolute;top:8px;right:14px;font-family:'Scheherazade New',serif;font-size:44px;color:var(--gold);opacity:.13;pointer-events:none;}
+.lesson-hero-title{font-size:19px;font-weight:700;color:var(--gold);margin-bottom:4px;}
+.lesson-hero-sub{font-size:12px;color:var(--mu);}
+.lesson-map-wrap{display:flex;flex-direction:column;align-items:stretch;gap:0;position:relative;padding-left:42px;}
+.lesson-map-wrap::before{content:'';position:absolute;left:27px;top:28px;bottom:28px;width:3px;background:linear-gradient(180deg,var(--gold) 0%,var(--bd) 80%,transparent 100%);border-radius:2px;z-index:0;}
+.lesson-node-card{display:flex;align-items:center;gap:14px;background:linear-gradient(145deg,var(--panel),var(--panel2));border:1.5px solid var(--bd2);border-radius:18px;padding:13px 16px;margin-bottom:14px;cursor:pointer;transition:all .25s;box-shadow:0 3px 14px rgba(0,0,0,.08);position:relative;z-index:1;}
+.lesson-node-card:hover:not(.locked){border-color:rgba(201,168,76,.6);box-shadow:0 7px 24px rgba(201,168,76,.2);transform:translateX(5px);}
+.lesson-node-card.done{border-color:rgba(61,170,122,.45);box-shadow:0 3px 14px rgba(61,170,122,.1);}
+.lesson-node-card.locked{opacity:.5;cursor:not-allowed;}
+.lesson-bubble{width:54px;height:54px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:linear-gradient(135deg,var(--gold-d),var(--gold));box-shadow:0 4px 16px rgba(201,168,76,.4);margin-left:-42px;border:3px solid var(--bg);transition:transform .25s;}
+.lesson-node-card:hover:not(.locked) .lesson-bubble{transform:scale(1.08);}
+.lesson-bubble.done{background:linear-gradient(135deg,#1e6030,#3daa7a);box-shadow:0 4px 16px rgba(61,170,122,.4);}
+.lesson-bubble.locked{background:var(--panel2);box-shadow:none;border-color:var(--bd);}
+.lesson-bubble-icon{font-size:20px;line-height:1;}
+.lesson-bubble-num{font-size:9px;color:rgba(255,255,255,.65);font-weight:700;margin-top:1px;}
+.lesson-node-info{flex:1;min-width:0;}
+.lesson-node-title{font-size:13px;font-weight:700;color:var(--tx);margin-bottom:2px;}
+.lesson-node-sub{font-size:11px;color:var(--mu);margin-bottom:5px;}
+.lesson-node-stars{font-size:14px;letter-spacing:1.5px;}
+.lesson-node-badge{font-size:10px;background:rgba(61,170,122,.15);border:1px solid rgba(61,170,122,.3);color:#3daa7a;border-radius:20px;padding:2px 8px;margin-left:6px;}
+
+/* ══════════════════════════════════════
+   LEÇONS — MODAL EXERCICE
+══════════════════════════════════════ */
+.lesson-modal{position:fixed;inset:0;z-index:9200;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;animation:fu .2s ease;}
+.lm-header{display:flex;align-items:center;gap:10px;padding:14px 16px 12px;border-bottom:1px solid var(--bd);flex-shrink:0;}
+.lm-close{background:transparent;border:1.5px solid var(--bd);color:var(--mu);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.lm-close:hover{border-color:var(--red);color:var(--red);}
+.lm-prog-wrap{flex:1;height:10px;background:var(--panel2);border-radius:5px;overflow:hidden;}
+.lm-prog-fill{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold));border-radius:5px;transition:width .45s ease;}
+.lm-hearts{font-size:14px;flex-shrink:0;letter-spacing:1px;}
+.lm-lesson-name{font-size:11px;color:var(--mu);text-align:center;padding:8px 16px 0;font-style:italic;}
+.lm-body{flex:1;overflow-y:auto;padding:18px 16px 24px;display:flex;flex-direction:column;}
+/* Type A — Écouter et trouver */
+.ex-instruction{font-size:15px;font-weight:600;color:var(--tx);text-align:center;margin-bottom:20px;line-height:1.5;}
+.ex-play-btn{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--gold-d),var(--gold));border:none;color:#100800;border-radius:50px;padding:14px 36px;font-size:15px;font-weight:700;cursor:pointer;margin:0 auto 28px;transition:all .25s;box-shadow:0 4px 16px rgba(201,168,76,.35);}
+.ex-play-btn:hover{transform:scale(1.06);box-shadow:0 7px 24px rgba(201,168,76,.5);}
+.ex-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:360px;margin:0 auto;width:100%;}
+.ex-choice{background:linear-gradient(145deg,var(--panel),var(--panel2));border:2px solid var(--bd2);border-radius:16px;padding:18px 8px 12px;font-family:'Scheherazade New',serif;font-size:46px;color:var(--gold-l);cursor:pointer;transition:all .22s;display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1.2;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+.ex-choice-ph{font-family:'Inter',sans-serif;font-size:10px;color:var(--mu);font-style:italic;}
+.ex-choice:hover:not(:disabled){border-color:var(--gold);background:rgba(201,168,76,.08);transform:translateY(-2px);}
+.ex-choice.correct{border-color:#3daa7a !important;background:rgba(61,170,122,.15) !important;animation:exBounce .35s ease;}
+.ex-choice.wrong{border-color:rgba(200,80,80,.7) !important;background:rgba(200,80,80,.1) !important;animation:exShake .4s ease;}
+@keyframes exBounce{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes exShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+/* Type B — Tracer */
+.ex-target{font-family:'Scheherazade New',serif;font-size:88px;color:var(--gold);text-align:center;line-height:1;margin:6px 0 4px;text-shadow:0 0 28px rgba(201,168,76,.25);}
+.ex-target-sub{font-size:13px;color:var(--mu);text-align:center;margin-bottom:18px;font-style:italic;}
+.ex-canvas-wrap{position:relative;background:var(--panel2);border:2px solid var(--bd2);border-radius:16px;overflow:hidden;cursor:crosshair;touch-action:none;width:100%;max-width:270px;margin:0 auto;aspect-ratio:1;box-shadow:0 4px 20px rgba(0,0,0,.1);}
+.ex-canvas-wrap.inking{border-color:var(--gold);}
+.ex-watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Scheherazade New',serif;font-size:140px;color:rgba(201,168,76,.1);pointer-events:none;user-select:none;line-height:1;}
+#lesson-canvas{display:block;width:100%;height:100%;position:relative;z-index:1;}
+.ex-canvas-tools{display:flex;gap:8px;justify-content:center;margin-top:10px;}
+.ex-continue-btn{width:100%;max-width:270px;display:block;margin:14px auto 0;background:var(--panel2);border:1.5px solid var(--bd2);color:var(--mu);border-radius:14px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all .25s;}
+.ex-continue-btn.ready{background:linear-gradient(135deg,var(--gold-d),var(--gold));border-color:transparent;color:#100800;box-shadow:0 4px 16px rgba(201,168,76,.3);}
+.ex-continue-btn.ready:hover{transform:scale(1.02);box-shadow:0 6px 22px rgba(201,168,76,.45);}
+/* Feedback */
+.ex-feedback-wrap{margin-top:16px;}
+.ex-fb{padding:13px 16px;border-radius:14px;font-weight:600;font-size:14px;display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+.ex-fb.ok{background:rgba(61,170,122,.12);border:1px solid rgba(61,170,122,.4);color:#3daa7a;}
+.ex-fb.err{background:rgba(200,80,80,.1);border:1px solid rgba(200,80,80,.35);color:var(--red);}
+.ex-next-btn{width:100%;background:linear-gradient(135deg,var(--gold-d),var(--gold));border:none;color:#100800;border-radius:14px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;transition:all .25s;}
+.ex-next-btn:hover{transform:scale(1.02);box-shadow:0 6px 22px rgba(201,168,76,.4);}
+/* Résultat */
+.lesson-result{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:16px;}
+.lr-ar{font-family:'Scheherazade New',serif;font-size:46px;color:var(--gold);margin-bottom:4px;text-shadow:0 0 24px rgba(201,168,76,.3);}
+.lr-msg{font-size:14px;color:var(--mu);margin-bottom:28px;}
+.lr-stars{display:flex;gap:14px;justify-content:center;margin-bottom:22px;}
+.lr-star{font-size:54px;line-height:1;transform:scale(0);transition:transform .45s cubic-bezier(.34,1.56,.64,1);}
+.lr-star.show{transform:scale(1);}
+.lr-xp{background:rgba(201,168,76,.1);border:1px solid var(--bd2);border-radius:14px;padding:12px 28px;font-size:14px;color:var(--gold);font-weight:600;margin-bottom:26px;}
+@media(max-width:400px){.ex-choices{gap:8px;} .ex-choice{font-size:38px;padding:14px 6px 10px;} .ex-target{font-size:70px;}}
 </style>
 </head>
 <body data-theme="dark">
@@ -524,6 +601,17 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
   </div>
 </div>
 
+<!-- LESSON MODAL -->
+<div class="lesson-modal" id="lesson-modal" style="display:none;">
+  <div class="lm-header">
+    <button class="lm-close" onclick="closeLessonModal()">✕</button>
+    <div class="lm-prog-wrap"><div class="lm-prog-fill" id="lm-prog-fill" style="width:0%"></div></div>
+    <div class="lm-hearts" id="lm-hearts">❤️❤️❤️</div>
+  </div>
+  <div class="lm-lesson-name" id="lm-lesson-name"></div>
+  <div class="lm-body" id="lm-body"></div>
+</div>
+
 <div class="streak-bar w">
   <div class="streak-badge">🔥 <span id="streak-n">0</span> j</div>
   <div class="xp-wrap">
@@ -539,6 +627,7 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
       <button class="nb-group" onclick="toggleGroup('grp-learn')">📚 Apprendre ▾</button>
       <div class="nb-dropdown" id="grp-learn">
         <button class="nb-drop-item" onclick="showSec('home');closeGroups()">🏠 Accueil</button>
+        <button class="nb-drop-item" onclick="showSec('lessons');closeGroups()">📚 Leçons</button>
         <button class="nb-drop-item" onclick="showSec('alpha');closeGroups()">🔤 Alphabet</button>
         <button class="nb-drop-item" onclick="showSec('harakat');closeGroups()">✨ Voyelles</button>
         <button class="nb-drop-item" onclick="showSec('tajweed');closeGroups()">📖 Tajweed</button>
@@ -570,8 +659,17 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 
 <div class="w">
 
+<!-- LEÇONS (page par défaut) -->
+<div class="sec active" id="sec-lessons">
+  <div class="lesson-hero">
+    <div class="lesson-hero-title">📚 Apprends à lire l'arabe</div>
+    <div class="lesson-hero-sub">5 leçons · 15 lettres · Trace, écoute, mémorise !</div>
+  </div>
+  <div class="lesson-map-wrap" id="lesson-map"></div>
+</div>
+
 <!-- HOME -->
-<div class="sec active" id="sec-home">
+<div class="sec" id="sec-home">
   <div class="home-hero">
     <div class="home-greet">
       <div class="home-salam">السلام عليكم</div>
@@ -609,6 +707,7 @@ nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);border-bottom:1
 
   <div class="home-quick-title">Raccourcis</div>
   <div class="home-quick">
+    <button class="home-tile" onclick="showSec('lessons')" style="border-color:rgba(201,168,76,.3);"><span class="ht-i">📚</span><span class="ht-l">Leçons</span></button>
     <button class="home-tile" onclick="showSec('alpha')"><span class="ht-i">🔤</span><span class="ht-l">Alphabet</span></button>
     <button class="home-tile" onclick="showSec('surahs')"><span class="ht-i">🌙</span><span class="ht-l">Sourates</span></button>
     <button class="home-tile" onclick="showSec('duas')"><span class="ht-i">🤲</span><span class="ht-l">Duas</span></button>
@@ -1291,6 +1390,7 @@ if(!ST.activity)ST.activity={};
 if(ST.uiSound===undefined)ST.uiSound=false;
 if(!ST.reciter)ST.reciter='Alafasy_128kbps';
 if(!ST.ayahStatus)ST.ayahStatus={};
+if(!ST.lessonStars)ST.lessonStars={};
 
 function save(){localStorage.setItem('nourST',JSON.stringify(ST));}
 
@@ -1639,6 +1739,7 @@ function showSec(id){
     if(b.getAttribute('onclick')?.includes("'"+id+"'")) b.classList.add('active');
   });
   if(id==='home') renderHome();
+  if(id==='lessons') renderLessons();
   if(id==='prog') renderProg();
   if(id==='playlist') renderPlaylist();
   if(id==='badges') renderBadges();
@@ -2776,6 +2877,244 @@ const _origAddXP=addXP;
 renderBadges; // called in showSec
 
 // ═══════════════════════════════════════════
+// LEÇONS — Données et fonctions
+// ═══════════════════════════════════════════
+
+const LESSONS = [
+  {id:1, title:'Alif · Bā · Tā',    subtitle:'Tes premières lettres',  icon:'🌟', letters:['ا','ب','ت']},
+  {id:2, title:'Thā · Jīm · Ḥā',   subtitle:'Sons doux et gutturaux', icon:'🔥', letters:['ث','ج','ح']},
+  {id:3, title:'Khā · Dāl · Dhāl', subtitle:'Les non-connecteurs',     icon:'💫', letters:['خ','د','ذ']},
+  {id:4, title:'Rā · Zāy · Sīn',   subtitle:'Lettres fluides',        icon:'🌙', letters:['ر','ز','س']},
+  {id:5, title:'Shīn · Ṣād · Ḍād', subtitle:'Lettres pointées',       icon:'⭐', letters:['ش','ص','ض']},
+];
+const ALL_LES_LETTERS = LESSONS.flatMap(l=>l.letters);
+
+// État courant d'une leçon
+let _les=null, _lesExList=[], _lesExIdx=0, _lesMistakes=0, _lesAnswered=false;
+let _lesCtx=null, _lesHasDrawn=false;
+
+function renderLessons(){
+  const el=document.getElementById('lesson-map');
+  if(!el) return;
+  el.innerHTML = LESSONS.map((les,i)=>{
+    const stars=(ST.lessonStars||{})[les.id]||0;
+    const done=stars>0;
+    const locked=i>0 && !((ST.lessonStars||{})[LESSONS[i-1].id]);
+    const starRow=[1,2,3].map(n=>n<=stars?'⭐':'⬜').join('');
+    const bubbleCls=done?'done':locked?'locked':'';
+    const cardCls=done?'done':locked?'locked':'';
+    const click=locked
+      ? `showToast('Termine la leçon ${i} d\\'abord !')`
+      : `startLesson(${les.id})`;
+    const badge=done?`<span class="lesson-node-badge">✓ Terminée</span>`:'';
+    return `<div class="lesson-node-card ${cardCls}" onclick="${click}">
+      <div class="lesson-bubble ${bubbleCls}">
+        <span class="lesson-bubble-icon">${done?'✓':locked?'🔒':les.icon}</span>
+        <span class="lesson-bubble-num">${les.id}</span>
+      </div>
+      <div class="lesson-node-info">
+        <div class="lesson-node-title">${les.title}${badge}</div>
+        <div class="lesson-node-sub">${les.subtitle}</div>
+        <div class="lesson-node-stars">${starRow}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function startLesson(id){
+  _les=LESSONS.find(l=>l.id===id); if(!_les) return;
+  _lesMistakes=0; _lesExIdx=0; _lesAnswered=false; _lesHasDrawn=false;
+  // Construire la liste d'exercices : listen puis trace pour chaque lettre
+  _lesExList=[];
+  _les.letters.forEach(letter=>{
+    _lesExList.push({type:'listen',letter});
+    _lesExList.push({type:'trace',letter});
+  });
+  const modal=document.getElementById('lesson-modal');
+  modal.style.display='flex';
+  document.body.style.overflow='hidden';
+  const lname=document.getElementById('lm-lesson-name');
+  if(lname) lname.textContent=_les.title+' — '+_les.subtitle;
+  showLessonExercise();
+}
+
+function closeLessonModal(){
+  document.getElementById('lesson-modal').style.display='none';
+  document.body.style.overflow='';
+  renderLessons();
+}
+
+function _updateLessonHeader(){
+  const pct=(_lesExIdx/_lesExList.length)*100;
+  const fill=document.getElementById('lm-prog-fill');
+  if(fill) fill.style.width=pct+'%';
+  const h=Math.max(0,3-_lesMistakes);
+  const hearts=document.getElementById('lm-hearts');
+  if(hearts) hearts.innerHTML='❤️'.repeat(h)+'🖤'.repeat(3-h);
+}
+
+function showLessonExercise(){
+  _updateLessonHeader();
+  _lesAnswered=false; _lesHasDrawn=false;
+  const ex=_lesExList[_lesExIdx];
+  if(ex.type==='listen') _renderExListen(ex.letter);
+  else _renderExTrace(ex.letter);
+}
+
+// ── Type A : Écouter → trouver la lettre ──
+function _renderExListen(letter){
+  const ld=LETTERS.find(l=>l.ar===letter)||{ph:'',name:''};
+  // 4 choix : correct + 3 aléatoires parmi toutes les lettres des leçons
+  const pool=ALL_LES_LETTERS.filter(l=>l!==letter).sort(()=>Math.random()-.5).slice(0,3);
+  const choices=[letter,...pool].sort(()=>Math.random()-.5);
+  const body=document.getElementById('lm-body');
+  body.innerHTML=`
+    <div class="ex-instruction">🔊 Quelle lettre entends-tu ?<br><span style="font-size:12px;color:var(--mu);font-weight:400;">Appuie d'abord sur Écouter</span></div>
+    <button class="ex-play-btn" id="ex-play-btn" onclick="playLessonAudio('${letter}')">🔊 Écouter</button>
+    <div class="ex-choices">
+      ${choices.map(c=>{
+        const cd=LETTERS.find(l=>l.ar===c)||{ph:''};
+        return `<button class="ex-choice" id="exc-${c}" onclick="answerListen('${c}','${letter}')">
+          ${c}<span class="ex-choice-ph">${cd.ph||''}</span>
+        </button>`;
+      }).join('')}
+    </div>
+    <div id="ex-feedback-wrap" class="ex-feedback-wrap"></div>`;
+  // Lecture auto après 500ms
+  setTimeout(()=>playLessonAudio(letter),500);
+}
+
+function playLessonAudio(letter){
+  const btn=document.getElementById('ex-play-btn');
+  if(btn){btn.innerHTML='🔊 …';setTimeout(()=>{if(btn)btn.innerHTML='🔊 Écouter';},1200);}
+  playLetter(letter);
+}
+
+function answerListen(chosen, correct){
+  if(_lesAnswered) return;
+  _lesAnswered=true;
+  // Désactiver tous les boutons
+  document.querySelectorAll('.ex-choice').forEach(b=>b.style.pointerEvents='none');
+  const ok=chosen===correct;
+  const btn=document.getElementById('exc-'+chosen);
+  const fb=document.getElementById('ex-feedback-wrap');
+  if(ok){
+    if(btn) btn.classList.add('correct');
+    if(fb) fb.innerHTML=`<div class="ex-fb ok">✓ Excellent ! C'est <strong style="font-family:'Scheherazade New',serif;font-size:20px;">${correct}</strong></div>`;
+    playLetter(correct);
+  } else {
+    if(btn) btn.classList.add('wrong');
+    const cbtn=document.getElementById('exc-'+correct);
+    if(cbtn) cbtn.classList.add('correct');
+    if(fb) fb.innerHTML=`<div class="ex-fb err">✗ C'était <strong style="font-family:'Scheherazade New',serif;font-size:20px;">${correct}</strong></div>`;
+    _lesMistakes++; _updateLessonHeader();
+  }
+  if(fb){
+    const nb=document.createElement('button');
+    nb.className='ex-next-btn'; nb.style.marginTop='12px';
+    nb.textContent=_lesExIdx+1>=_lesExList.length?'Terminer 🎉':'Continuer →';
+    nb.onclick=nextLessonEx;
+    fb.appendChild(nb);
+  }
+}
+
+// ── Type B : Voir la lettre → tracer → entendre ──
+function _renderExTrace(letter){
+  const ld=LETTERS.find(l=>l.ar===letter)||{name:'',ph:''};
+  const body=document.getElementById('lm-body');
+  body.innerHTML=`
+    <div class="ex-instruction">✏️ Trace cette lettre par-dessus<br><span style="font-size:12px;color:var(--mu);font-weight:400;">Dessine avec le doigt ou la souris</span></div>
+    <div class="ex-target">${letter}</div>
+    <div class="ex-target-sub">${ld.name} ${ld.ph}</div>
+    <div class="ex-canvas-wrap" id="les-cwrap">
+      <div class="ex-watermark">${letter}</div>
+      <canvas id="lesson-canvas"></canvas>
+    </div>
+    <div class="ex-canvas-tools">
+      <button class="tbtn" onclick="_clearLesCanvas()">🗑 Effacer</button>
+    </div>
+    <div id="ex-feedback-wrap" class="ex-feedback-wrap" style="margin-top:12px;"></div>
+    <button class="ex-continue-btn" id="ex-cont-btn" onclick="_traceNext('${letter}')">Valider et écouter →</button>`;
+  _initLesCanvas(letter);
+}
+
+function _initLesCanvas(letter){
+  const wrap=document.getElementById('les-cwrap');
+  const canvas=document.getElementById('lesson-canvas');
+  if(!canvas||!wrap) return;
+  const sz=wrap.getBoundingClientRect().width||260;
+  canvas.width=sz; canvas.height=sz;
+  _lesCtx=canvas.getContext('2d');
+  _lesCtx.strokeStyle='#C9A84C'; _lesCtx.lineWidth=7;
+  _lesCtx.lineCap='round'; _lesCtx.lineJoin='round';
+  let drawing=false;
+  const gp=e=>{const r=canvas.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*(canvas.width/r.width),y:(t.clientY-r.top)*(canvas.height/r.height)};};
+  const start=e=>{e.preventDefault();drawing=true;const p=gp(e);_lesCtx.beginPath();_lesCtx.moveTo(p.x,p.y);
+    if(!_lesHasDrawn){_lesHasDrawn=true;wrap.classList.add('inking');_activateContinueBtn();}
+  };
+  const move=e=>{if(!drawing)return;e.preventDefault();const p=gp(e);_lesCtx.lineTo(p.x,p.y);_lesCtx.stroke();};
+  const end=()=>{drawing=false;};
+  canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);canvas.addEventListener('mouseup',end);
+  canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',move,{passive:false});canvas.addEventListener('touchend',end);
+}
+
+function _activateContinueBtn(){
+  const btn=document.getElementById('ex-cont-btn');
+  if(btn) btn.classList.add('ready');
+}
+
+function _clearLesCanvas(){
+  const canvas=document.getElementById('lesson-canvas');
+  if(_lesCtx&&canvas){_lesCtx.clearRect(0,0,canvas.width,canvas.height);_lesHasDrawn=false;const w=document.getElementById('les-cwrap');if(w)w.classList.remove('inking');const b=document.getElementById('ex-cont-btn');if(b)b.classList.remove('ready');}
+}
+
+function _traceNext(letter){
+  const fb=document.getElementById('ex-feedback-wrap');
+  if(fb) fb.innerHTML=`<div class="ex-fb ok">🔊 Écoute le son de la lettre !</div>`;
+  const btn=document.getElementById('ex-cont-btn');
+  if(btn) btn.style.display='none';
+  playLetter(letter);
+  setTimeout(()=>{
+    const nb=document.createElement('button');
+    nb.className='ex-next-btn'; nb.style.marginTop='10px';
+    nb.textContent=_lesExIdx+1>=_lesExList.length?'Terminer 🎉':'Continuer →';
+    nb.onclick=nextLessonEx;
+    if(fb) fb.appendChild(nb);
+  },1100);
+}
+
+function nextLessonEx(){
+  _lesExIdx++;
+  if(_lesExIdx>=_lesExList.length){_showLessonResult();return;}
+  showLessonExercise();
+}
+
+function _showLessonResult(){
+  const stars=_lesMistakes===0?3:_lesMistakes<=2?2:1;
+  if(!ST.lessonStars) ST.lessonStars={};
+  ST.lessonStars[_les.id]=Math.max(ST.lessonStars[_les.id]||0,stars);
+  const xp=stars*10; addXP(xp); save();
+  // Compléter la barre
+  const fill=document.getElementById('lm-prog-fill');
+  if(fill) fill.style.width='100%';
+  const body=document.getElementById('lm-body');
+  body.innerHTML=`
+    <div class="lesson-result">
+      <div class="lr-ar">أَحْسَنْتَ !</div>
+      <div class="lr-msg">Leçon terminée ! ${stars===3?'Parfait, zéro erreur !':stars===2?'Très bien !':'Continue à t\'entraîner !'}</div>
+      <div class="lr-stars">
+        <span class="lr-star" id="lrs1">${1<=stars?'⭐':'⬜'}</span>
+        <span class="lr-star" id="lrs2">${2<=stars?'⭐':'⬜'}</span>
+        <span class="lr-star" id="lrs3">${3<=stars?'⭐':'⬜'}</span>
+      </div>
+      <div class="lr-xp">+${xp} XP gagnés 🎉</div>
+      <button class="btn-g" style="width:100%;padding:14px;" onclick="closeLessonModal()">Continuer →</button>
+    </div>`;
+  // Animation étoiles
+  [1,2,3].forEach(n=>{setTimeout(()=>{const el=document.getElementById('lrs'+n);if(el)el.classList.add('show');},280+n*260);});
+}
+
+// ═══════════════════════════════════════════
 // INIT — tout en bas pour que toutes les données soient déclarées
 // ═══════════════════════════════════════════
 
@@ -2791,6 +3130,7 @@ initDSetup();
 updateXPBar();
 checkStreak();
 renderHome();
+renderLessons();
 setupMediaSession();
 
 </script>
